@@ -39,5 +39,6 @@ return [
      'role_updated'=>'role id updated successfully',
      'role_updated_status'=>'role  updations failed',
      'user_role_token'=>'user role has been updated while logging in with google  and  token generated',
-     'login_success'=>'Congratulations ! you have successfully logged in'
+     'login_success'=>'Congratulations ! you have successfully logged in',
+     'role_assigned'=> 'You cannot perform this action. Role already assigned.'
 ];

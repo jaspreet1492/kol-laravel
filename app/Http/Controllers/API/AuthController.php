@@ -258,7 +258,7 @@ class AuthController extends Controller
             }
 
         else{
-            $msg = __("api_string.error");
+            $msg = __("api_string.role_assigned");
             return response()->json(['statusCode'=>500,'Status'=>false,'msg'=>$msg]);
         }
     } catch (\Throwable $th) {

@@ -14,21 +14,7 @@ use App\Models\Category;
 */
 
 Route::get('/', function () {
-    $records = Category::orderBy('id','desc')->with('getCategoryParent')->get();
-    // dd($records);
-    $filterData = [];
-    $i = 0;
-    foreach($records as $record){
-        $filterData[$i]['name'] = $record['name'];
-        $filterData[$i]['description'] = $record['description'];
-        $filterData[$i]['parent_name'] = $record['getCategoryParent'];
-        $filterData[$i]['image'] = $record['image'];
-        $filterData[$i]['status'] = $record['status'];
-        $i++;
-
-    }
-    dd($filterData);
-    return $allCategoriesData ;;
+    return view('welcome');
 });
 
 
