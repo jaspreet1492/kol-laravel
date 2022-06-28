@@ -8,6 +8,7 @@ use App\Http\Controllers\API\ResetPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\API\KolProfileController;
 
 
 Route::middleware(['api'])->group(function () {
@@ -35,6 +36,8 @@ Route::middleware(['api'])->group(function () {
   Route::group(['middleware' => ['jwt.verify']], function() {
     
      Route::put('reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('kol-profile/add-update',[KolProfileController::Class,'AddOrUpdateKolProfile']);
+
   });
   
   Route::group(['middleware' => 'isAdmin'], function () {
