@@ -31,18 +31,30 @@ class KolProfileController extends Controller
             }
 
             $userId = auth()->user()->id;
-            $checkProfile = $this->userService->checkKolProfileExistOrNot($request,$userId);
+            $checkProfile = $this->userService->checkKolProfileExistOrNot($userId);
+           
             if($checkProfile){
-               // update profile
+                // update profile
+                $checkProfile = $this->userService->UpdateKolProfile($request,$userId);
+                $msg=__("api_string.kol_profile_updated");
+                return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
 
             }else{
                 //add  profile
-            $checkProfile = $this->userService->AddKolProfile($request,$userId);
+                $checkProfile = $this->userService->AddKolProfile($request,$userId);
+                $msg=__("api_string.kol_profile_added");
+                return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);
 
             }
         } catch (\Throwable $th) {
             $msg= __("api_string.error");
             return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
+    }
+
+    public function getKolProfileById(Request $request){
+        
+        $kolProfileData = $this->userService->ViewKolProfileById($request['id']);
+        return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=>$kolProfileData]);
     }
 }

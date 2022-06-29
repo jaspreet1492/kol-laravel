@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserTokens;
 use App\Models\UserAddress;
 use App\Models\KolProfile;
+use App\Models\SocialMedia;
 use App\Http\Controllers\MailController;
 use Illuminate\Support\Facades\Auth;
 use Session;
@@ -256,33 +257,150 @@ class UserService
 
 
     // KOL Profile Logic Here
-    public function AddKolProfile($request, $userId){
+    public function AddKolProfile($request, $userId)
+    {
 
-        dd($request->all());
-        $profileImgUrl =KolProfile::makeImageUrl($request['avatar']);
-        $bannerImgUrl =KolProfile::makeImageUrl($request['banner']);
-        $saveData = new KolProfile();
-        $saveData->user_id = $userId;
-        $saveData->languages = implode(',',$request['languages']);
-        $saveData->bio = $request['bio'];
-        $saveData->personal_email = $request['personal_email'];
-        $saveData->kol_type = $request['kol_type'];
-        $saveData->state = $request['state'];
-        $saveData->zip_code = $request['zip_code'];
-        $saveData->city = $request['city'];
-        $saveData->total_viewer = $request['total_viewer'];
-        $saveData->social_active = implode(',',$request['social_active']);
-        $saveData->video_links = implode(',',$request['video_links']);
-        $saveData->tags = implode(',',$request['tags']);
-        $saveData->avatar = $profileImgUrl;
-        $saveData->banner = $bannerImgUrl;
+        $profileImgUrl = KolProfile::makeImageUrl($request['avatar']);
+        $bannerImgUrl = KolProfile::makeImageUrl($request['banner']);
+        $kolProfileData = new KolProfile();
+        $kolProfileData->user_id = $userId;
+        $kolProfileData->languages = implode(',', $request['languages']);
+        $kolProfileData->bio = $request['bio'];
+        $kolProfileData->personal_email = $request['personal_email'];
+        $kolProfileData->kol_type = $request['kol_type'];
+        $kolProfileData->state = $request['state'];
+        $kolProfileData->zip_code = $request['zip_code'];
+        $kolProfileData->city = $request['city'];
+        $kolProfileData->total_viewer = $request['total_viewer'];
+        $kolProfileData->social_active = implode(',', $request['social_active']);
+        $kolProfileData->video_links = implode(',', $request['video_links']);
+        $kolProfileData->tags = implode(',', $request['tags']);
+        $kolProfileData->avatar = $profileImgUrl;
+        $kolProfileData->banner = $bannerImgUrl;
+        $kolProfileData->status = 1;
+        $checkUserSaved = $kolProfileData->save();
+        $lastProfileId = $kolProfileData->id;
+
+        if ($lastProfileId) {
+            foreach ($request['social_media'] as $requestMediaData) {
+                $kolSocialData = new SocialMedia();
+                $kolSocialData->user_id = $userId;
+                $kolSocialData->profile_id = $lastProfileId;
+                $kolSocialData->name = $requestMediaData['name'];
+                $kolSocialData->social_user_id = $requestMediaData['social_user_id'];
+                $kolSocialData->followers = $requestMediaData['followers'];
+                $kolSocialMedia = $kolSocialData->save();
+            }
+        }
+        return $lastProfileId;
+    }
+    
+    public function UpdateKolProfile($request, $userId)
+    {
+
+        $id = ($request['id']) ? $request['id'] : NULL;
+        $profileImgUrl = ($request['avatar']) ? KolProfile::makeImageUrl($request['avatar']) : NULL;
+        $bannerImgUrl = ($request['banner']) ? KolProfile::makeImageUrl($request['banner']) : NULL;
+        $updateData = [];
+        if ($profileImgUrl && $bannerImgUrl) {
+
+            $updateData = [
+                'languages' => implode(',', $request['languages']),
+                'bio' => $request['bio'],
+                'personal_email' => $request['personal_email'],
+                'kol_type' => $request['kol_type'],
+                'state' => $request['state'],
+                'zip_code' => $request['zip_code'],
+                'city' => $request['city'],
+                'total_viewer' => $request['total_viewer'],
+                'social_active' => implode(',', $request['social_active']),
+                'video_links' => implode(',', $request['video_links']),
+                'tags' => implode(',', $request['tags']),
+                'avatar' => $profileImgUrl,
+                'banner' => $bannerImgUrl,
+            ];
+
+        } elseif ($profileImgUrl) {
+
+            $updateData = [
+                'avatar' => $profileImgUrl,
+                'languages' => implode(',', $request['languages']),
+                'bio' => $request['bio'],
+                'personal_email' => $request['personal_email'],
+                'kol_type' => $request['kol_type'],
+                'state' => $request['state'],
+                'zip_code' => $request['zip_code'],
+                'city' => $request['city'],
+                'total_viewer' => $request['total_viewer'],
+                'social_active' => implode(',', $request['social_active']),
+                'video_links' => implode(',', $request['video_links']),
+                'tags' => implode(',', $request['tags']),
+            ];
+
+        } elseif ($bannerImgUrl) {
+
+            $updateData = [
+                'banner' => $bannerImgUrl,
+                'languages' => implode(',', $request['languages']),
+                'bio' => $request['bio'],
+                'personal_email' => $request['personal_email'],
+                'kol_type' => $request['kol_type'],
+                'state' => $request['state'],
+                'zip_code' => $request['zip_code'],
+                'city' => $request['city'],
+                'total_viewer' => $request['total_viewer'],
+                'social_active' => implode(',', $request['social_active']),
+                'video_links' => implode(',', $request['video_links']),
+                'tags' => implode(',', $request['tags']),
+            ];
+        } else {
+            $updateData = [
+                'languages' => implode(',', $request['languages']),
+                'bio' => $request['bio'],
+                'personal_email' => $request['personal_email'],
+                'kol_type' => $request['kol_type'],
+                'state' => $request['state'],
+                'zip_code' => $request['zip_code'],
+                'city' => $request['city'],
+                'total_viewer' => $request['total_viewer'],
+                'social_active' => implode(',', $request['social_active']),
+                'video_links' => implode(',', $request['video_links']),
+                'tags' => implode(',', $request['tags']),
+            ];
+        }
         
-        dd($saveData);
+        $updateResponse = KolProfile::where('id', $id)->update($updateData);
+        if ($updateResponse) {
+            $socialMedia = SocialMedia::where('profile_id', $id)->where('user_id',$userId)->count();
+
+            if($socialMedia>0){
+                $socialAccounts = SocialMedia::where('profile_id', $id)->where('user_id',$userId)->delete();
+            }
+            foreach ($request['social_media'] as $requestMediaData) {
+                $kolSocialData = new SocialMedia();
+                $kolSocialData->user_id = $userId;
+                $kolSocialData->profile_id = $id;
+                $kolSocialData->name = $requestMediaData['name'];
+                $kolSocialData->social_user_id = $requestMediaData['social_user_id'];
+                $kolSocialData->followers = $requestMediaData['followers'];
+                $kolSocialMedia = $kolSocialData->save();
+            }
+        }
+
+        return $updateResponse;
     }
 
-    public function checkKolProfileExistOrNot($userId){
+    public function checkKolProfileExistOrNot($userId)
+    {
 
         return KolProfile::where('user_id', $userId)->first();
     }
 
+    public function ViewKolProfileById($id)
+    {
+        $profileData = KolProfile::where('kol_profiles.id', $id)->with('getSocialMedia')->get();
+
+        return $profileData;
+    }
 }
+
