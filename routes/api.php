@@ -57,7 +57,7 @@ Route::middleware(['api'])->group(function () {
 
     Route::post('updateCategory',[CategoryController::Class,'makeUpdation']);
 
-  });
+  }); 
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
