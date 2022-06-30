@@ -402,5 +402,67 @@ class UserService
 
         return $profileData;
     }
+
+    public function KolProfileList($request){
+        
+        $listProfiles = [];
+        $i = 0;
+        $kolProfiles = KolProfile::with('getUser')->with('getSocialMedia')
+        ->where(function($query) use ($request){
+            if($request['search']){
+
+            }elseif($request['social_active']){
+
+            }elseif($request['state']){
+
+            }elseif($request['languages']){
+
+            }
+            if($request['languages'] || $request['social_active'] || $request['state']){
+                
+            }      
+        })->get();
+        
+        //return $kolProfiles[0]['getUser'];
+
+        foreach($kolProfiles as $key => $profileList){
+            
+            $listProfiles[$i]['profile_id'] = $profileList['id'];
+            $listProfiles[$i]['languages'] = $profileList['languages'];
+            $listProfiles[$i]['bio'] = $profileList['bio'];
+            $listProfiles[$i]['avatar'] = $profileList['avatar'];
+            $listProfiles[$i]['personal_email'] = $profileList['personal_email'];
+            $listProfiles[$i]['kol_type'] = $profileList['kol_type'];
+            $listProfiles[$i]['state'] = $profileList['state'];
+            $listProfiles[$i]['city'] = $profileList['city'];
+            $listProfiles[$i]['zip_code'] = $profileList['zip_code'];
+            $listProfiles[$i]['total_viewer'] = $profileList['total_viewer'];
+            $listProfiles[$i]['banner'] = $profileList['banner'];
+            $listProfiles[$i]['social_active'] = $profileList['social_active'];
+            $listProfiles[$i]['video_links'] = $profileList['video_links'];
+            $listProfiles[$i]['tags'] = $profileList['tags'];
+            $listProfiles[$i]['user_id'] = $profileList['getUser']['id'];
+            $listProfiles[$i]['username'] = $profileList['getUser']['name'];
+            $listProfiles[$i]['email'] = $profileList['getUser']['email'];
+            $listProfiles[$i]['role_id'] = $profileList['getUser']['role_id'];
+            $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
+            $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
+            $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
+
+
+            foreach($profileList['getSocialMedia'] as $socialAccounts){
+
+                $listProfiles[$i]['social_media_id'] = $socialAccounts['id'];
+                $listProfiles[$i]['social_platform'] = $socialAccounts['name'];
+                $listProfiles[$i]['social_media_username'] = $socialAccounts['social_user_id'];
+                $listProfiles[$i]['followers'] = $socialAccounts['followers'];
+            }
+            $i++;
+        }
+
+        
+        
+        return $listProfiles;
+    }
 }
 

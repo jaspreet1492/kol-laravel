@@ -38,6 +38,7 @@ Route::middleware(['api'])->group(function () {
      Route::put('reset-password', [AuthController::class, 'resetPassword']);
     Route::post('kol-profile/add-update',[KolProfileController::Class,'AddOrUpdateKolProfile']);
     Route::get('kol-profile/view',[KolProfileController::Class,'getKolProfileById']);
+    Route::get('kol-profile/list',[KolProfileController::Class,'getProfileList']);
 
   });
   
