@@ -42,5 +42,6 @@ return [
      'login_success'=>'Congratulations ! you have successfully logged in',
      'role_assigned'=> 'You cannot perform this action. Role already assigned.',
      'kol_profile_updated'=> 'Kol profile has been updated successfully.',
-     'kol_profile_added'=> 'Kol profile has been added successfully.'
+     'kol_profile_added'=> 'Kol profile has been added successfully.',
+     'not_authorized'=> 'Invalid Authorization.'
 ];

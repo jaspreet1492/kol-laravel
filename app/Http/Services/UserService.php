@@ -237,7 +237,6 @@ class UserService
         if (Str::startsWith($header, 'Bearer ')) {
             $token = Str::substr($header, 7);
         }
-        // dd($token);
         if ($token) {
             $valdiation = Validator::make(
                 $request->all(),
@@ -404,29 +403,43 @@ class UserService
     }
 
     public function KolProfileList($request){
-        
-        $listProfiles = [];
-        $i = 0;
-        $kolProfiles = KolProfile::with('getUser')->with('getSocialMedia')
-        ->where(function($query) use ($request){
-            if($request['search']){
 
-            }elseif($request['social_active']){
-
-            }elseif($request['state']){
-
-            }elseif($request['languages']){
-
-            }
-            if($request['languages'] || $request['social_active'] || $request['state']){
-                
-            }      
-        })->get();
-        
-        //return $kolProfiles[0]['getUser'];
-
-        foreach($kolProfiles as $key => $profileList){
+        $sortBY = ($request['sortBY']) ? $request['sortBY'] : 'followers';
+        $orderBy = isset($request['orderBy']) ? $request['orderBy'] : 'desc';
+        $socialMedia = ($request['social_media']) ? $request['social_media'] : 'youtube';
+        $UserIdByQuery = [];
+        $sortBYQuery = [];
+        if($sortBY && $socialMedia){
+            $sortBYQuery = $this->sortFollowers($orderBy,$sortBY,$socialMedia);
+        }
+        if($request['search']){
+            $UserIdByQuery = $this->searchUserByName($request['search']);
             
+        }
+        
+        $kolProfiles = KolProfile::with('getUser','getSocialMedia')
+        ->where(function($query) use ($request,$UserIdByQuery, $sortBYQuery, $sortBY, $socialMedia){
+            if($request['languages']){
+                $query->whereRaw('Find_IN_SET(?, languages)', [$request['languages']]);
+            }
+            if($request['search']){
+                $query->whereIn('user_id', [$UserIdByQuery][0]);
+            }
+            if($request['state']){
+                $query->where('state', [$request['state']]);
+            }
+            if($sortBY && $socialMedia){
+                $query->whereIn('id', [$sortBYQuery][0]);            
+            }
+            if($request['stream']){
+                $query->whereRaw('Find_IN_SET(?, social_active)', [$request['stream']]);
+            }
+        })->get();
+
+        $listProfiles = [];
+        $listSocialMedia = [];
+        $i = 0;
+        foreach($kolProfiles as $key => $profileList){
             $listProfiles[$i]['profile_id'] = $profileList['id'];
             $listProfiles[$i]['languages'] = $profileList['languages'];
             $listProfiles[$i]['bio'] = $profileList['bio'];
@@ -448,21 +461,30 @@ class UserService
             $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
             $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
             $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
-
-
+            $j = 0;
             foreach($profileList['getSocialMedia'] as $socialAccounts){
 
-                $listProfiles[$i]['social_media_id'] = $socialAccounts['id'];
-                $listProfiles[$i]['social_platform'] = $socialAccounts['name'];
-                $listProfiles[$i]['social_media_username'] = $socialAccounts['social_user_id'];
-                $listProfiles[$i]['followers'] = $socialAccounts['followers'];
+                $listSocialMedia[$j]['social_media_id'] = $socialAccounts['id'];
+                $listSocialMedia[$j]['social_platform'] = $socialAccounts['name'];
+                $listSocialMedia[$j]['social_media_username'] = $socialAccounts['social_user_id'];
+                $listSocialMedia[$j]['followers'] = $socialAccounts['followers'];
+                $j++;
             }
+            $listProfiles[$i]['SocialMedia'] = $listSocialMedia;
+
             $i++;
         }
-
-        
         
         return $listProfiles;
+    }
+
+    public function searchUserByName($search){
+        return User::where('name', 'like', '%'.$search.'%')->pluck('id');
+    }
+
+    public function sortFollowers($orderBy,$sortBY,$socialMedia){
+        return SocialMedia::where('name',$socialMedia)->orderBy($sortBY,$orderBy)->pluck('profile_id');
+        
     }
 }
 
