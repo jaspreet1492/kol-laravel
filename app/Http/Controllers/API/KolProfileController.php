@@ -49,7 +49,7 @@ class KolProfileController extends Controller
     
                 }
             }else{
-                //Not Authorized
+                //Not Author ized
                 $msg=__("api_string.not_authorized");
                 return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
             }
