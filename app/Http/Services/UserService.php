@@ -459,9 +459,22 @@ class UserService
 
         return $profileData;
     }
+    public function ViewAnnouncementById($id)
+    {
+        $announcementData = Announcement::where('announcements.id', $id)->with('getUser')->get();
+
+        return $announcementData;
+    }
+    public function getAnnouncementstatus($id)
+    {
+        $announcementData = Announcement::select('status')->where('announcements.id', $id)->first();
+        return $announcementData['status'];
+    }
 
     public function KolProfileList($request){
-
+        
+        $pageNo = ($request['page']) ? $request['page'] : 1;
+        $limit = $request['limit'];
         $sortBY = ($request['sortBY']) ? $request['sortBY'] : 'followers';
         $orderBy = isset($request['orderBy']) ? $request['orderBy'] : 'desc';
         $socialMedia = ($request['social_media']) ? $request['social_media'] : 'youtube';
@@ -492,7 +505,7 @@ class UserService
             if($request['stream']){
                 $query->whereRaw('Find_IN_SET(?, social_active)', [$request['stream']]);
             }
-        })->get();
+        })->skip(($pageNo - 1) * $limit)->take($limit)->get();
 
         $listProfiles = [];
         $listSocialMedia = [];
@@ -534,6 +547,27 @@ class UserService
         }
         
         return $listProfiles;
+    }
+
+    public function getAnnouncementList($request,$userId){
+
+        $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->get();
+        
+        return $AnnouncementList;
+    }
+
+    public function deleteAnnouncement($id){
+
+        $Announcement = Announcement::where('id',$id)->delete();
+        
+        return $Announcement;
+    }
+
+    public function AnnouncementActiveInactive($id,$status){
+
+        $updateResponse = Announcement::where('id', $id)->update(['status' => $status]);
+        
+        return $updateResponse;
     }
 
     public function searchUserByName($search){

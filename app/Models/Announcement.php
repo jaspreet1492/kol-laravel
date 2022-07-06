@@ -23,5 +23,7 @@ class Announcement extends Model
         }
     }
 
-    
+    public function getUser(){
+        return $this->hasOne(User::class,'id','user_id');
+    }
 }
