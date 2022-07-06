@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\API\KolProfileController;
+use App\Http\Controllers\API\AnnouncementController;
 
 
 Route::middleware(['api'])->group(function () {
@@ -39,6 +40,7 @@ Route::middleware(['api'])->group(function () {
     Route::post('kol-profile/add-update',[KolProfileController::Class,'AddOrUpdateKolProfile']);
     Route::get('kol-profile/view',[KolProfileController::Class,'getKolProfileById']);
     Route::get('kol-profile/list',[KolProfileController::Class,'getProfileList']);
+    Route::post('announcement/add-update',[AnnouncementController::Class,'AddorUpdateAnnouncement']);
 
   });
   

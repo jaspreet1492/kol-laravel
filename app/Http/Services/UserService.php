@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserTokens;
 use App\Models\UserAddress;
 use App\Models\KolProfile;
+use App\Models\Announcement;
 use App\Models\SocialMedia;
 use App\Http\Controllers\MailController;
 use Illuminate\Support\Facades\Auth;
@@ -293,6 +294,58 @@ class UserService
         }
         return $lastProfileId;
     }
+
+    // Add Announcement
+    public function AddAnnouncement($request, $userId, $profile_id)
+    {
+        $AnnouncementImg = Announcement::makeImageUrl($request['image']);
+        $AnnouncementData = new Announcement();
+        $AnnouncementData->user_id = $userId;
+        $AnnouncementData->profile_id = $profile_id;
+        $AnnouncementData->title = $request['title'];
+        $AnnouncementData->description = $request['description'];
+        $AnnouncementData->start_date = $request['start_date'];
+        $AnnouncementData->end_date = $request['end_date'];
+        $AnnouncementData->social_platform = $request['social_platform'];
+        $AnnouncementData->image = $AnnouncementImg;
+        $AnnouncementDataSaved = $AnnouncementData->save();
+        $lastAnnouncementId = $AnnouncementData->id;
+
+        return $lastAnnouncementId;
+    }
+
+    // Update Announcement
+    public function UpdateAnnouncement($request, $id)
+    {
+        $id = ($request['id']) ? $request['id'] : NULL;
+        $AnnouncementImg = ($request['image']) ? Announcement::makeImageUrl($request['image']) : NULL;
+        $updateData = [];
+
+        if ($AnnouncementImg) {
+            
+            $updateData = [
+                'title' => $request['title'],
+                'description' => $request['description'],
+                'start_date' => $request['start_date'],
+                'end_date' => $request['end_date'],
+                'social_platform' => $request['social_platform'],
+                'image' => $AnnouncementImg,
+            ];
+
+        } else {
+            $updateData = [
+                'title' => $request['title'],
+                'description' => $request['description'],
+                'start_date' => $request['start_date'],
+                'end_date' => $request['end_date'],
+                'social_platform' => $request['social_platform'],
+            ];
+        }
+
+        $updateResponse = Announcement::where('id', $id)->update($updateData);
+
+        return $updateResponse;
+    }
     
     public function UpdateKolProfile($request, $userId)
     {
@@ -393,6 +446,11 @@ class UserService
     {
 
         return KolProfile::where('user_id', $userId)->first();
+    }
+
+    public function checkAnnouncementExistOrNot($Id)
+    {
+        return Announcement::where('id', $Id)->first();
     }
 
     public function ViewKolProfileById($id)
