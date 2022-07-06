@@ -24,6 +24,14 @@ class KolProfile extends Model
         }
     }
 
+    public function getSocialMedia(){
+        return $this->hasMany(SocialMedia::class,'profile_id','id');
+    }
+
+    public function getUser(){
+        return $this->hasOne(User::class,'id','user_id');
+    }
+
 }
 
 
