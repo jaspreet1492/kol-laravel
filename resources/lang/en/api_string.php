@@ -45,5 +45,7 @@ return [
      'kol_profile_added'=> 'Kol profile has been added successfully.',
      'announcement_updated'=> 'Announcement has been updated successfully.',
      'announcement_added'=> 'Announcement has been added successfully.',
+     'announcement_deleted'=> 'Announcement has been deleted successfully.',
+     'announcement_already_deleted'=> 'Announcement has been deleted already.',
      'not_authorized'=> 'Invalid Authorization.'
 ];

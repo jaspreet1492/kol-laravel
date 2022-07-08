@@ -64,4 +64,79 @@ class AnnouncementController extends Controller
             return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
     }
+
+    public function getAnnouncementById(Request $request){
+        $AnnouncementData = $this->userService->ViewAnnouncementById($request['id']);
+        return response()->json(["status"=>true,"statusCode"=>200,"announcement"=>$AnnouncementData]);
+    }
+
+    public function getAnnouncementList(Request $request){
+        $userId = auth()->user()->id;
+        $announcements = $this->userService->getAnnouncementList($request,$userId);
+        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
+    }
+
+    public function deleteAnnouncement(Request $request){
+        $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($request['id']);
+        if($checkAnnouncement){
+            $announcementData = $this->userService->deleteAnnouncement($request['id']);
+            $statusCode= 200;
+            $msg=__("api_string.announcement_deleted");
+            
+        } else{
+            $statusCode= 204;
+            $msg=__("api_string.announcement_already_deleted");
+        }
+        return response()->json(["status"=>true,'statusCode'=>$statusCode,"message"=>$msg]);
+    }
+
+    public function AnnouncementActiveInactive(Request $request){
+
+        try {
+            $roleId = auth()->user()->role_id;
+            $userId = auth()->user()->id;
+            if($roleId == 2){
+                $valdiation = Validator::make($request->all(),[
+                    'status' => 'required'
+                ]);
+                if($valdiation->fails()) {
+                    $msg = __("api_string.invalid_fields");
+                    return response()->json(["message"=>$msg, "statusCode"=>422]);
+                }
+
+                $id = $request['id'];    
+                $status = $request['status'];  
+                $getCurrentStatus = $this->userService->getAnnouncementstatus($id);
+                $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($id);
+                if($request['status'] == 'active'){
+                    $status = 1;
+                }elseif($request['status']=='inactive'){
+                    $status = 0;
+                }
+            
+                if($checkAnnouncement){
+                    $changeStatus = $this->userService->AnnouncementActiveInactive($request['id'],$status);
+                    if($status==1 && $status != $getCurrentStatus){
+                        $msg = 'Announcement Activated';
+                    } elseif($status==0 && $status != $getCurrentStatus){
+                        $msg = 'Announcement Deactivated';
+                    } elseif($status == $getCurrentStatus){
+                        $msg = 'Action cannot be performed';
+                    }
+                    return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
+
+                }else{
+                    return response()->json(["status"=>true,'statusCode'=>401,"message"=>'Announcement Not Found']);
+                }
+            }else{
+                //Not Authorized
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+            }
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
+
+    }
 }

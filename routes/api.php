@@ -36,11 +36,15 @@ Route::middleware(['api'])->group(function () {
 
   Route::group(['middleware' => ['jwt.verify']], function() {
     
-     Route::put('reset-password', [AuthController::class, 'resetPassword']);
+    Route::put('reset-password', [AuthController::class, 'resetPassword']);
     Route::post('kol-profile/add-update',[KolProfileController::Class,'AddOrUpdateKolProfile']);
     Route::get('kol-profile/view',[KolProfileController::Class,'getKolProfileById']);
     Route::get('kol-profile/list',[KolProfileController::Class,'getProfileList']);
     Route::post('announcement/add-update',[AnnouncementController::Class,'AddorUpdateAnnouncement']);
+    Route::get('announcement/view',[AnnouncementController::Class,'getAnnouncementById']);
+    Route::get('announcement/list',[AnnouncementController::Class,'getAnnouncementList']);
+    Route::delete('announcement/delete',[AnnouncementController::Class,'deleteAnnouncement']);
+    Route::post('announcement/active-inactive-status',[AnnouncementController::Class,'AnnouncementActiveInactive']);
 
   });
   
