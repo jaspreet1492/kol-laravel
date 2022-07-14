@@ -83,7 +83,7 @@ Route::middleware(['api'])->group(function () {
   Route::get('stream-list',[KolTypeController::Class,'getStream']);
 
 
-
+ 
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
