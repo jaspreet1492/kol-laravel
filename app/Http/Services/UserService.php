@@ -638,7 +638,7 @@ class UserService
 
         return $kolProfileData;
     }
-
+    
     public function KolProfileList($request){
         
         $pageNo = ($request['page']) ? $request['page'] : 1;
@@ -719,6 +719,7 @@ class UserService
         
         return $listProfiles;
     }
+
 
     public function searchUserByName($search){
         return User::where('name', 'like', '%'.$search.'%')->pluck('id');

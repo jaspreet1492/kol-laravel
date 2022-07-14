@@ -89,7 +89,6 @@ class AnnouncementController extends Controller
             $announcementData = $this->userService->deleteAnnouncement($request['id']);
             $statusCode= 200;
             $msg=__("api_string.announcement_deleted");
-
         } else{
             $statusCode= 204;
             $msg=__("api_string.announcement_already_deleted");
@@ -120,7 +119,6 @@ class AnnouncementController extends Controller
                 }elseif($request['status']=='inactive'){
                     $status = 0;
                 }
-
                 if($checkAnnouncement){
                     $changeStatus = $this->userService->AnnouncementActiveInactive($request['id'],$status);
                     if($status==1 && $status != $getCurrentStatus){

@@ -59,7 +59,6 @@ return [
      'language_list'=> 'Language list has been fetched.',
      'state_list'=> 'State list has been fetched.',
      'stream_list'=> 'Stream list has been fetched.',
-     'announcement_already_deleted'=> 'Announcement has been deleted already.',
      'not_authorized'=> 'Invalid Authorization.',
      'unique_kol_type'=> 'This kol type is already exists or empty.',
      'valid_langauge'=> 'Please enter valid languages',
