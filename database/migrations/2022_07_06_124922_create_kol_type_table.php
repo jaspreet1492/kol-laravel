@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class SocialMedia extends Migration
+class CreateKolTypeTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,9 @@ class SocialMedia extends Migration
      */
     public function up()
     {
-        Schema::create('social_media', function (Blueprint $table) {
-            $table->bigIncrements('id');
+        Schema::create('kol_type', function (Blueprint $table) {
+            $table->id();
             $table->string('name');
-            $table->string('social_user_id')->nullable();
-            $table->string('followers')->nullable();
             $table->integer('status')->default(1);
             $table->timestamps();
         });
@@ -30,6 +28,6 @@ class SocialMedia extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('social_media');
+        Schema::dropIfExists('kol_type');
     }
 }

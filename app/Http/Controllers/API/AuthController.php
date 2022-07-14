@@ -187,7 +187,7 @@ class AuthController extends Controller
             $checkEmail = $this->userService->checkEmail($request['email']);
             if($checkEmail){
                 if($checkEmail['role_id'] !==0){
-                     $token = $this->userService->generateJwtToken($checkEmail);
+                    $token = $this->userService->generateJwtToken($checkEmail);
                     if($token){
                         $response = [];
                         $response['token'] = $token;
@@ -201,8 +201,11 @@ class AuthController extends Controller
                         return response()->json(["status"=>false, "statusCode"=>500,"message"=>$msg]);                
                     }
                 }else{
-                    $msg = __("api_string.error");
-                    return response()->json(["status"=>false, "statusCode"=>500,"message"=>$msg]);
+                    $response['user_name'] = $request['name'];
+                    $response['email'] = $request['email'];
+                    $response['role_id'] = 0;
+                    $msg =  __("api_string.assign_role_id");
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]); 
                 }
             }else{
                 //create users

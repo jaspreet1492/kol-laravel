@@ -21,17 +21,59 @@ class KolProfileController extends Controller
             $roleId = auth()->user()->role_id;
             if($roleId == 2){
                 $valdiation = Validator::make($request->all(),[
-                    'languages' => 'required', 
+                    'languages.*' => 'required', 
                     'kol_type' => 'required', 
                     'state' => 'required', 
                     'zip_code' => 'required', 
                     'city' => 'required', 
+                    'bio' => 'required',
+                    'avatar' => 'required',
+                    'total_viewer' => 'required|alpha_num', 
+                    'banner' => 'required',
+                    'video_links.*'=>'required|url',
+                    'tags.*' => 'required',
+                    'personal_email' => 'nullable|email',
+                    'social_active.*'=>'required',
+                    'social_media.*.name'=>'required',
+                    'social_media.*.social_icon'=>'required',
+                    'social_media.*.social_user_id'=>'required',
+                    'social_media.*.followers'=>'required',
                 ]);
                 if($valdiation->fails()) {
-                    $msg = __("api_string.invalid_fields");
+                    $msg = $valdiation->errors()->first();
                     return response()->json(["message"=>$msg, "statusCode"=>422]);
                 }
-    
+                
+                $langauges = Config('app.languages');
+                $states = Config('app.states');
+                $streams = Config('app.stream');
+                $kolTypes = $this->userService->ViewKolType($request['kol_type']);
+                $countLang = count(array_intersect($langauges,$request['languages']));
+                $countstream = count(array_intersect($streams,$request['social_active']));
+                $countsocial = count(array_intersect($streams,array_column($request['social_media'],'name')));
+                $stateCheck = in_array($request['state'],$states);
+
+                if($countLang !== count($request['languages'])){
+                    $msg=__("api_string.valid_langauge");
+                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
+                }
+                if($countstream !== count($request['social_active'])){
+                    $msg=__("api_string.valid_stream");
+                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
+                }
+                if($countsocial !== count(array_column($request['social_media'],'name'))){
+                    $msg=__("api_string.social_media_name");
+                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
+                }
+                if(!$stateCheck){
+                    $msg=__("api_string.valid_state");
+                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
+                }
+                if(!$kolTypes){
+                    $msg=__("api_string.valid_kol_type");
+                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
+                };
+            
                 $userId = auth()->user()->id;
                 $checkProfile = $this->userService->checkKolProfileExistOrNot($userId);
                
@@ -49,7 +91,6 @@ class KolProfileController extends Controller
     
                 }
             }else{
-                //Not Author ized
                 $msg=__("api_string.not_authorized");
                 return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
             }
