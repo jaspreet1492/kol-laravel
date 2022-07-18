@@ -139,6 +139,7 @@ class UserService
             $obj['last_name']=$chatDatas->getSender->last_name;
             $obj['avatar']=(isset($chatDatas->kolProfile->avatar)&& $chatDatas->kolProfile->avatar!=NULL)?$chatDatas->kolProfile->avatar:$chatDatas->getSender->avatar;
             $obj['last_msg'] = $chatDatas->message;
+            $obj['time'] = $chatDatas->created_at;
             $obj['profile_id'] = ($chatDatas->receiver_id==$userId)?$chatDatas->sender_id:$chatDatas->receiver_id;
         
         $data[] = $obj;
