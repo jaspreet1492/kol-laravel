@@ -25,10 +25,10 @@ class KolProfileController extends Controller
                     'kol_type' => 'required', 
                     'state' => 'required', 
                     'zip_code' => 'required', 
-                    'city' => 'required', 
+                    'city' => 'required|alpha', 
                     'bio' => 'required',
                     'avatar' => 'required',
-                    'total_viewer' => 'required|alpha_num', 
+                    // 'total_viewer' => 'required|alpha_num', 
                     'banner' => 'required',
                     'video_links.*'=>'required|url',
                     'tags.*' => 'required',
@@ -103,8 +103,15 @@ class KolProfileController extends Controller
 
     public function getKolProfileById(Request $request){
         
+        $endUserId = auth()->user()->id;
         $kolProfileData = $this->userService->ViewKolProfileById($request['id']);
-        return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=>$kolProfileData]);
+        $checkBookmark = $this->userService->checkBookmarkExistOrNot($endUserId,$request['id']);
+        if(empty($checkBookmark)){
+            $kolProfileData[0]['Bookmark']= 'false';
+        }else {
+            $kolProfileData[0]['Bookmark'] = 'true';
+        }
+        return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=> $kolProfileData]);
     }
 
     public function getProfileList(Request $request){

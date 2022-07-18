@@ -28,6 +28,10 @@ class KolProfile extends Model
         return $this->hasMany(SocialMedia::class,'profile_id','id');
     }
 
+    public function getBookmark(){
+        return $this->hasOne(Bookmark::class,'kol_profile_id','id');
+    }
+
     public function getAnnouncements(){
         return $this->hasMany(Announcement::class,'profile_id','id');
     }
