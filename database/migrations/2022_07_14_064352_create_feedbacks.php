@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class SocialMedia extends Migration
+class CreateFeedbacks extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,13 @@ class SocialMedia extends Migration
      */
     public function up()
     {
-        Schema::create('social_media', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('name');
-            $table->string('social_user_id')->nullable();
-            $table->string('followers')->nullable();
+        Schema::create('feedbacks', function (Blueprint $table) {
+            $table->id();
+            $table->integer('end_user_id');
+            $table->integer('kol_user_id');
+            $table->integer('kol_profile_id');
+            $table->string('comment');
+            $table->integer('rating');
             $table->integer('status')->default(1);
             $table->timestamps();
         });
@@ -30,6 +32,6 @@ class SocialMedia extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('social_media');
+        Schema::dropIfExists('feedbacks');
     }
 }

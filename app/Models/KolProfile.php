@@ -28,8 +28,13 @@ class KolProfile extends Model
         return $this->hasMany(SocialMedia::class,'profile_id','id');
     }
 
+    public function getAnnouncements(){
+        return $this->hasMany(Announcement::class,'profile_id','id');
+    }
+
     public function getUser(){
         return $this->hasOne(User::class,'id','user_id');
+    
     }
 
 }

@@ -8,7 +8,10 @@ use App\Models\UserAddress;
 use App\Models\KolProfile;
 use App\Models\Announcement;
 use App\Models\SocialMedia;
+use App\Models\Feedback;
 use App\Http\Controllers\MailController;
+use App\Models\KolType;
+use App\Models\Bookmark;
 use Illuminate\Support\Facades\Auth;
 use Session;
 use Crypt;
@@ -287,6 +290,7 @@ class UserService
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $lastProfileId;
                 $kolSocialData->name = $requestMediaData['name'];
+                $kolSocialData->social_icon = $requestMediaData['social_icon'];
                 $kolSocialData->social_user_id = $requestMediaData['social_user_id'];
                 $kolSocialData->followers = $requestMediaData['followers'];
                 $kolSocialMedia = $kolSocialData->save();
@@ -312,6 +316,90 @@ class UserService
         $lastAnnouncementId = $AnnouncementData->id;
 
         return $lastAnnouncementId;
+    }
+
+    // Add KolType
+    public function AddKolType($request)
+    {
+        $KolTypeData = new KolType();
+        $KolTypeData->name = $request['name'];
+        $KolTypeDataSaved = $KolTypeData->save();
+        $lastKolTypeId = $KolTypeData->id;
+
+        return $lastKolTypeId;
+    }
+
+
+    // Add Bookmark
+    public function AddBookmark($kol_profile_id,$endUserId,$kol_user_id)
+    {
+        $BookmarkData = new Bookmark();
+        $BookmarkData->end_user_id = $endUserId;
+        $BookmarkData->kol_profile_id = $kol_profile_id;
+        $BookmarkData->kol_user_id = $kol_user_id;
+        $BookmarkDataSaved = $BookmarkData->save();
+        $lastBookmarkId = $BookmarkData->id;
+
+        return $lastBookmarkId;
+    }
+
+
+    // Add Feedback
+    public function AddFeedback($request,$endUserId,$kol_user_id)
+    {
+        $FeedbackData = new Feedback();
+        $FeedbackData->end_user_id = $endUserId;
+        $FeedbackData->kol_profile_id = $request['kol_profile_id'];
+        $FeedbackData->kol_user_id = $kol_user_id;
+        $FeedbackData->comment = $request['comment'];
+        $FeedbackData->rating = ($request['rating']) ? $request['rating'] : 1;
+        $FeedbackDataSaved = $FeedbackData->save();
+        $lastFeedbackId = $FeedbackData->id;
+
+        return $lastFeedbackId;
+    }
+
+    // View KolType
+    public function ViewKolType($id)
+    {
+        $KolTypeData = KolType::where('id', $id)->where('status',1)->first();
+
+        return $KolTypeData;
+    }
+
+    // Update KolType
+    public function UpdateKolType($request,$id)
+    {
+        $updateResponse = KolType::where('id', $id)->update(['name' => $request['name']]);
+
+        return $updateResponse;
+    }
+
+    // get KolType
+    public function KolTypeList($request)
+    {
+        $updateResponse = KolType::where('status', 1)->pluck('name','id')->toArray();
+        $keys = array_keys($updateResponse);
+        $values = array_values($updateResponse);
+        $response = array_combine($keys,$values);
+        
+        return $response;
+    }
+
+    // get Kol Users Feedback
+    public function getKolFeedbackList($kolUserId)
+    {
+        $response = Feedback::where('kol_user_id', $kolUserId)->with('getKolProfile')->with('getUser')->get();
+
+        return $response;
+    }
+
+    // get End Users Feedback
+    public function getEndUserFeedbackList($userId)
+    {
+        $response = Feedback::where('end_user_id', $userId)->with('getKolProfile')->with('getUser')->get();
+
+        return $response;
     }
 
     // Update Announcement
@@ -346,6 +434,74 @@ class UserService
 
         return $updateResponse;
     }
+
+    public function ViewAnnouncementById($id)
+    {
+        $announcementData = Announcement::where('announcements.id', $id)->with('getUser')->get();
+
+        return $announcementData;
+    }
+
+    public function getAnnouncementstatus($id)
+    {
+        $announcementData = Announcement::select('status')->where('announcements.id', $id)->first();
+        return $announcementData['status'];
+    }
+
+    public function getKolTypestatus($id)
+    {
+        $KolTypeData = KolType::select('status')->where('kol_type.id', $id)->first();
+        return $KolTypeData['status'];
+    }
+
+    public function getAnnouncementList($userId){
+
+        $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->get();
+
+        return $AnnouncementList;
+    }
+
+    public function getBookmarks($userId){
+
+        $BookmarkList = Bookmark::where('end_user_id',$userId)->where('status',1)->with('getKolProfile')->with('getUser')->get();
+
+        return $BookmarkList;
+    }
+
+    public function getAllAnnouncementList(){
+
+        $AnnouncementList = Announcement::where('status',1)->with('getUser')->get();
+
+        return $AnnouncementList;
+    }
+
+    public function deleteAnnouncement($id){
+
+        $Announcement = Announcement::where('id',$id)->delete();
+
+        return $Announcement;
+    }
+    
+    public function deleteBookmark($kol_profile_id,$endUserId){
+
+        $Bookmark = Bookmark::where('kol_profile_id', $kol_profile_id)->where('end_user_id', $endUserId)->delete();
+
+        return $Bookmark;
+    }
+
+    public function ActiveInactiveKolType($id,$status){
+
+        $kolType = KolType::where('id',$id)->update(['status' => $status]);
+
+        return $kolType;
+    }
+
+    public function AnnouncementActiveInactive($id,$status){
+
+        $updateResponse = Announcement::where('id', $id)->update(['status' => $status]);
+
+        return $updateResponse;
+    }
     
     public function UpdateKolProfile($request, $userId)
     {
@@ -355,7 +511,6 @@ class UserService
         $bannerImgUrl = ($request['banner']) ? KolProfile::makeImageUrl($request['banner']) : NULL;
         $updateData = [];
         if ($profileImgUrl && $bannerImgUrl) {
-
             $updateData = [
                 'languages' => implode(',', $request['languages']),
                 'bio' => $request['bio'],
@@ -420,19 +575,22 @@ class UserService
                 'tags' => implode(',', $request['tags']),
             ];
         }
-        
-        $updateResponse = KolProfile::where('id', $id)->update($updateData);
+
+        $updateResponse = KolProfile::where('user_id', $userId)->update($updateData);
+        $profile_id = KolProfile::where('user_id', $userId)->pluck('id');
+
         if ($updateResponse) {
-            $socialMedia = SocialMedia::where('profile_id', $id)->where('user_id',$userId)->count();
+            $socialMedia = SocialMedia::where('user_id', $userId)->where('user_id',$userId)->count();
 
             if($socialMedia>0){
-                $socialAccounts = SocialMedia::where('profile_id', $id)->where('user_id',$userId)->delete();
+                $socialAccounts = SocialMedia::where('user_id', $userId)->delete();
             }
             foreach ($request['social_media'] as $requestMediaData) {
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
-                $kolSocialData->profile_id = $id;
+                $kolSocialData->profile_id = $profile_id[0];
                 $kolSocialData->name = $requestMediaData['name'];
+                $kolSocialData->social_icon = $requestMediaData['social_icon'];
                 $kolSocialData->social_user_id = $requestMediaData['social_user_id'];
                 $kolSocialData->followers = $requestMediaData['followers'];
                 $kolSocialMedia = $kolSocialData->save();
@@ -448,33 +606,43 @@ class UserService
         return KolProfile::where('user_id', $userId)->first();
     }
 
+    public function checkKolTypeExistOrNot($id)
+    {
+
+        return KolType::where('id', $id)->first();
+    }
+
     public function checkAnnouncementExistOrNot($Id)
     {
         return Announcement::where('id', $Id)->first();
     }
 
+    public function checkBookmarkExistOrNot($endUserId,$kol_profile_id)
+    {
+        return Bookmark::where('kol_profile_id', $kol_profile_id)->where('end_user_id', $endUserId)->first();
+    }
+
+    public function checkFeedbackExistOrNot($endUserId,$kol_profile_id)
+    {
+        return Feedback::where('kol_profile_id', $kol_profile_id)->where('end_user_id', $endUserId)->first();
+    }
+
     public function ViewKolProfileById($id)
     {
-        $profileData = KolProfile::where('kol_profiles.id', $id)->with('getSocialMedia')->get();
+        $profileData = KolProfile::where('kol_profiles.id', $id)->with('getUser')->with('getSocialMedia')->get();
+        $latestAnnouncement = Announcement::where('profile_id',$id)->where('status',1)->orderBy('id','Desc')->first();
+        
+        
+        $kolProfileData = $profileData;
+        $kolProfileData[0]['announcement'] = $latestAnnouncement;
 
-        return $profileData;
+        return $kolProfileData;
     }
-    public function ViewAnnouncementById($id)
-    {
-        $announcementData = Announcement::where('announcements.id', $id)->with('getUser')->get();
-
-        return $announcementData;
-    }
-    public function getAnnouncementstatus($id)
-    {
-        $announcementData = Announcement::select('status')->where('announcements.id', $id)->first();
-        return $announcementData['status'];
-    }
-
+    
     public function KolProfileList($request){
         
         $pageNo = ($request['page']) ? $request['page'] : 1;
-        $limit = $request['limit'];
+        $limit = ($request['limit']) ? $request['limit'] : 10;
         $sortBY = ($request['sortBY']) ? $request['sortBY'] : 'followers';
         $orderBy = isset($request['orderBy']) ? $request['orderBy'] : 'desc';
         $socialMedia = ($request['social_media']) ? $request['social_media'] : 'youtube';
@@ -483,30 +651,32 @@ class UserService
         if($sortBY && $socialMedia){
             $sortBYQuery = $this->sortFollowers($orderBy,$sortBY,$socialMedia);
         }
-        if($request['search']){
+        if(isset($request['search']) && $request['search']!='' ){
             $UserIdByQuery = $this->searchUserByName($request['search']);
             
         }
         
         $kolProfiles = KolProfile::with('getUser','getSocialMedia')
         ->where(function($query) use ($request,$UserIdByQuery, $sortBYQuery, $sortBY, $socialMedia){
-            if($request['languages']){
+            if(isset($request['languages']) && !empty($request['languages'])){
                 $query->whereRaw('Find_IN_SET(?, languages)', [$request['languages']]);
             }
-            if($request['search']){
+            if(isset($request['search']) && $request['search']!= ''){
                 $query->whereIn('user_id', [$UserIdByQuery][0]);
             }
-            if($request['state']){
+            if(isset($request['state']) && $request['state']!= ''){
                 $query->where('state', [$request['state']]);
             }
-            if($sortBY && $socialMedia){
-                $query->whereIn('id', [$sortBYQuery][0]);            
-            }
-            if($request['stream']){
+            // if($sortBY && $socialMedia){
+            //     $query->whereIn('id', [$sortBYQuery][0]);            
+            // }
+            if(isset($request['stream']) && !empty($request['stream'])){
                 $query->whereRaw('Find_IN_SET(?, social_active)', [$request['stream']]);
             }
+            if(isset($request['kol_type']) && $request['kol_type']!=''){
+                $query->where('kol_type', [$request['kol_type']]);
+            }
         })->skip(($pageNo - 1) * $limit)->take($limit)->get();
-
         $listProfiles = [];
         $listSocialMedia = [];
         $i = 0;
@@ -537,6 +707,7 @@ class UserService
 
                 $listSocialMedia[$j]['social_media_id'] = $socialAccounts['id'];
                 $listSocialMedia[$j]['social_platform'] = $socialAccounts['name'];
+                $listSocialMedia[$j]['social_icon'] = $socialAccounts['social_icon'];
                 $listSocialMedia[$j]['social_media_username'] = $socialAccounts['social_user_id'];
                 $listSocialMedia[$j]['followers'] = $socialAccounts['followers'];
                 $j++;
@@ -549,26 +720,6 @@ class UserService
         return $listProfiles;
     }
 
-    public function getAnnouncementList($request,$userId){
-
-        $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->get();
-        
-        return $AnnouncementList;
-    }
-
-    public function deleteAnnouncement($id){
-
-        $Announcement = Announcement::where('id',$id)->delete();
-        
-        return $Announcement;
-    }
-
-    public function AnnouncementActiveInactive($id,$status){
-
-        $updateResponse = Announcement::where('id', $id)->update(['status' => $status]);
-        
-        return $updateResponse;
-    }
 
     public function searchUserByName($search){
         return User::where('name', 'like', '%'.$search.'%')->pluck('id');
