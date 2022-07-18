@@ -9,8 +9,11 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\API\KolProfileController;
+use App\Http\Controllers\API\KolTypeController;
 use App\Http\Controllers\API\AnnouncementController;
 use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\BookmarkController;
+use App\Http\Controllers\API\FeedbackController;
 
 
 Route::middleware(['api'])->group(function () {
@@ -43,8 +46,18 @@ Route::middleware(['api'])->group(function () {
     Route::get('kol-profile/list',[KolProfileController::Class,'getProfileList']);
     Route::put('kol-profile/add-view-count',[KolProfileController::Class,'saveProfileView']);
     Route::post('announcement/add-update',[AnnouncementController::Class,'AddorUpdateAnnouncement']);
+    Route::post('bookmark/add',[BookmarkController::Class,'AddBookmark']);
+    Route::post('feedback/add',[FeedbackController::Class,'AddFeedback']);
+    Route::delete('bookmark/delete',[BookmarkController::Class,'deleteBookmark']);
+    Route::get('bookmark/list',[BookmarkController::Class,'getBookmarks']);
+    Route::get('feedback/end-user-list',[FeedbackController::Class,'getEndUserFeedbackList']);
+    Route::get('feedback/kol-user-list',[FeedbackController::Class,'getKolFeedbackList']);
+    Route::post('kol-type/add-update',[KolTypeController::Class,'AddorUpdateKolType']);
+    Route::get('kol-type/list',[KolTypeController::Class,'getKolTypeList']);
+    Route::post('kol-type/active-inactive',[KolTypeController::Class,'ActiveInactiveKolType']);
     Route::get('announcement/view',[AnnouncementController::Class,'getAnnouncementById']);
     Route::get('announcement/list',[AnnouncementController::Class,'getAnnouncementList']);
+    Route::get('announcement/all-list',[AnnouncementController::Class,'getAllAnnouncementList']);
     Route::delete('announcement/delete',[AnnouncementController::Class,'deleteAnnouncement']);
     Route::post('announcement/active-inactive-status',[AnnouncementController::Class,'AnnouncementActiveInactive']);
     Route::post('Chat/send-message',[ChatController::Class,'sendMessage']);
@@ -72,6 +85,13 @@ Route::middleware(['api'])->group(function () {
     Route::post('updateCategory',[CategoryController::Class,'makeUpdation']);
 
   }); 
+
+  Route::get('language-list',[KolTypeController::Class,'getLanguage']);
+  Route::get('state-list',[KolTypeController::Class,'getState']);
+  Route::get('stream-list',[KolTypeController::Class,'getStream']);
+
+
+ 
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();

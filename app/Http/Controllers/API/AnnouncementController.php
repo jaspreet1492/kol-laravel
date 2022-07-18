@@ -29,8 +29,10 @@ class AnnouncementController extends Controller
                 $valdiation = Validator::make($request->all(),[
                     'title' => 'required', 
                     'description' => 'required', 
-                    'start_date' => 'required', 
-                    'end_date' => 'required'
+                    'start_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:', 
+                    'end_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:',
+                    'image' => 'required', 
+                    'social_platform' => 'required'
                 ]);
                 if($valdiation->fails()) {
                     $msg = __("api_string.invalid_fields");
@@ -71,8 +73,13 @@ class AnnouncementController extends Controller
     }
 
     public function getAnnouncementList(Request $request){
-        $userId = auth()->user()->id;
-        $announcements = $this->userService->getAnnouncementList($request,$userId);
+        $userId = $request['id'];
+        $announcements = $this->userService->getAnnouncementList($userId);
+        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
+    }
+
+    public function getAllAnnouncementList(Request $request){
+        $announcements = $this->userService->getAllAnnouncementList();
         return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
     }
 
@@ -82,7 +89,6 @@ class AnnouncementController extends Controller
             $announcementData = $this->userService->deleteAnnouncement($request['id']);
             $statusCode= 200;
             $msg=__("api_string.announcement_deleted");
-            
         } else{
             $statusCode= 204;
             $msg=__("api_string.announcement_already_deleted");
@@ -113,7 +119,6 @@ class AnnouncementController extends Controller
                 }elseif($request['status']=='inactive'){
                     $status = 0;
                 }
-            
                 if($checkAnnouncement){
                     $changeStatus = $this->userService->AnnouncementActiveInactive($request['id'],$status);
                     if($status==1 && $status != $getCurrentStatus){
@@ -139,4 +144,5 @@ class AnnouncementController extends Controller
         }
 
     }
+    
 }
