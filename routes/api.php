@@ -10,6 +10,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\API\KolProfileController;
 use App\Http\Controllers\API\AnnouncementController;
+use App\Http\Controllers\API\ChatController;
 
 
 Route::middleware(['api'])->group(function () {
@@ -40,13 +41,20 @@ Route::middleware(['api'])->group(function () {
     Route::post('kol-profile/add-update',[KolProfileController::Class,'AddOrUpdateKolProfile']);
     Route::get('kol-profile/view',[KolProfileController::Class,'getKolProfileById']);
     Route::get('kol-profile/list',[KolProfileController::Class,'getProfileList']);
+    Route::put('kol-profile/add-view-count',[KolProfileController::Class,'saveProfileView']);
     Route::post('announcement/add-update',[AnnouncementController::Class,'AddorUpdateAnnouncement']);
     Route::get('announcement/view',[AnnouncementController::Class,'getAnnouncementById']);
     Route::get('announcement/list',[AnnouncementController::Class,'getAnnouncementList']);
     Route::delete('announcement/delete',[AnnouncementController::Class,'deleteAnnouncement']);
     Route::post('announcement/active-inactive-status',[AnnouncementController::Class,'AnnouncementActiveInactive']);
-
+    Route::post('Chat/send-message',[ChatController::Class,'sendMessage']);
+    Route::get('Chat/chat-list-users',[ChatController::Class,'getChatDataUsers']);
+    Route::get('Chat/chat-list',[ChatController::Class,'getChatData']);
+    Route::get('Chat/delete-msg',[ChatController::Class,'deleteChat']);
+    Route::put('Chat/edit-msg',[ChatController::Class,'editChat']);
+    
   });
+  
   
   Route::group(['middleware' => 'isAdmin'], function () {
 

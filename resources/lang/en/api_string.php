@@ -47,5 +47,12 @@ return [
      'announcement_added'=> 'Announcement has been added successfully.',
      'announcement_deleted'=> 'Announcement has been deleted successfully.',
      'announcement_already_deleted'=> 'Announcement has been deleted already.',
-     'not_authorized'=> 'Invalid Authorization.'
+     'not_authorized'=> 'Invalid Authorization.',
+     'msg_sent'=> 'Message sent successfully.',
+     'msg_get'=> 'Message get successfully.',
+     'msg_edit'=> 'Message edited successfully.',
+     'msg_delete'=> 'Message deleted successfully.',
+     'profile_view_updated'=> 'Profile view updated successfully.',
+     
+
 ];

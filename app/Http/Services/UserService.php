@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\UserTokens;
 use App\Models\UserAddress;
 use App\Models\KolProfile;
+use App\Models\Chat;
+use App\Models\ChatThread;
 use App\Models\Announcement;
 use App\Models\SocialMedia;
 use App\Http\Controllers\MailController;
@@ -29,7 +31,135 @@ class UserService
         $allUserData = User::all();
         return $allUserData;
     }
+    public function saveChat($request, $userId)
+    {
+        // dd($request['receiver_id']);
+        $checkChat = Chat::where(function($query) use($userId,$request){
+            $query->where(function($q) use($userId, $request){
+                $q->where('sender_id',$request['receiver_id'])
+                ->where('receiver_id',$userId);
+            })
+            ->orWhere(function($q) use($userId, $request){
+                $q->where('sender_id',$userId)
+                ->where('receiver_id',$request['receiver_id']);
+            });
+        })
+        ->first();
 
+        if(($checkChat==null)){
+            $chatData = new Chat();
+            $chatData->sender_id = $userId;
+            $chatData->receiver_id = $request['receiver_id'];
+            $chatData->message = $request['message'];
+            $chat = $chatData->save();
+            $lastChatId = $chatData->id;
+            if($chatData){
+                $chatThreadData = new ChatThread();
+            $chatThreadData->sender_id = $userId;
+            $chatThreadData->chat_id = $lastChatId;
+            $chatThreadData->receiver_id = $request['receiver_id'];
+            $chatThreadData->message = $request['message'];
+            $chatThread = $chatThreadData->save();
+            return $chatThread;
+            }else{
+                return 0;
+            }
+            
+           
+        }else{
+
+            // dd($checkChat->id);
+            $result = Chat::where(['id'=> $checkChat->id])->update(['receiver_id'=>$request['receiver_id'],'sender_id'=>$userId,'message'=>$request['message']]);
+            if($result){
+            $chatThreadData = new ChatThread();
+            $chatThreadData->sender_id = $userId;
+            $chatThreadData->chat_id = $checkChat->id;
+            $chatThreadData->receiver_id = $request['receiver_id'];
+            $chatThreadData->message = $request['message'];
+            $chatThread = $chatThreadData->save();
+            return $chatThread;
+            }else{
+                return 0;
+            }
+          
+        }
+        
+        
+    }
+    public function getChat($request, $userId)
+    {
+        
+    $chatData = ChatThread::where(['status'=> 1])
+    ->whereIn('sender_id',[$userId,$request['receiver_id']])
+    ->whereIn('receiver_id',[$userId,$request['receiver_id']])
+    ->with('getReceiver','kolProfile')
+    ->orderBy('id', 'ASC')->get();
+    // $data =[];
+    // dd($chatData);
+    
+    foreach($chatData as $chatDatas){
+        $obj = [];
+            // $obj['userData'] = $chatDatas->getUser;
+            $obj['name']=$chatDatas->getReceiver->name;
+            $obj['last_name']=$chatDatas->getReceiver->last_name;
+            // $obj['userData']['role_id']=$chatDatas->getReceiver->role_id;
+            $obj['avatar']=(isset($chatDatas->kolProfile->avatar)&& $chatDatas->kolProfile->avatar!=NULL)?$chatDatas->kolProfile->avatar:$chatDatas->getReceiver->avatar;
+            // $obj['userData']['email']=$chatDatas->getReceiver->email;
+            $obj['message_id'] = $chatDatas->id;
+            $obj['sender_id'] = $chatDatas->sender_id;
+            $obj['receiver_id'] = $chatDatas->receiver_id;
+            $obj['message'] = $chatDatas->message;
+            $obj['sent_at'] = $chatDatas->created_at;
+            $obj['edit_at'] = $chatDatas->updated_at;
+        
+        $data[] = $obj;
+    }
+    return $data;
+    }
+
+    public function getChatUsers($request, $userId)
+    {   
+        
+    $chatData = Chat::where(['status'=> 1])
+    ->where(function($query) use($userId){
+        $query->where('sender_id', $userId)
+            ->orWhere('receiver_id', $userId);
+    })
+    ->with('getSender','getReceiver','kolProfile')
+    // ->groupBy('receiver_id')
+    ->orderBy('updated_at', 'DESC')->get();
+    // dd($chatData);
+    $data =[];
+    foreach($chatData as $chatDatas){
+        $obj = [];
+            $obj['name']=$chatDatas->getSender->name;
+            $obj['last_name']=$chatDatas->getSender->last_name;
+            $obj['avatar']=(isset($chatDatas->kolProfile->avatar)&& $chatDatas->kolProfile->avatar!=NULL)?$chatDatas->kolProfile->avatar:$chatDatas->getSender->avatar;
+            $obj['last_msg'] = $chatDatas->message;
+            $obj['profile_id'] = ($chatDatas->receiver_id==$userId)?$chatDatas->sender_id:$chatDatas->receiver_id;
+        
+        $data[] = $obj;
+    }
+
+    return $data;
+    } 
+
+    public function deleteMsg($request, $userId)
+    {
+        $result = ChatThread::where(['id'=> $request['msg_id'],'sender_id'=>$userId,'status'=>1])->update(['status' => 0]);
+        return $result;
+    }
+    
+    public function updateViewCount($request, $userId,$views)
+    {
+        $result = KolProfile::where(['id'=> $request['profile_id']])->update(['total_viewer' => $views+1]);
+        return $result;
+    }
+    public function editMsg($request, $userId)
+    {
+        $result = ChatThread::where(['id'=> $request['msg_id'],'sender_id'=>$userId])->update(['message' => $request['message']]);
+        return $result;
+    }
     public function createUser($request, $otp, $roleId)
     {
 
@@ -446,6 +576,11 @@ class UserService
     {
 
         return KolProfile::where('user_id', $userId)->first();
+    }
+    public function checkKolProfileIdExistOrNot($profileId)
+    {
+
+        return KolProfile::where('id', $profileId)->first();
     }
 
     public function checkAnnouncementExistOrNot($Id)
