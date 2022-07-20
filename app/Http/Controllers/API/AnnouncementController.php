@@ -24,7 +24,7 @@ class AnnouncementController extends Controller
         try {
             $roleId = auth()->user()->role_id;
             $userId = auth()->user()->id;
-            $profileId= KolProfile::where('user_id',$userId)->pluck('id');
+            $profileId= KolProfile::select('id')->where('user_id',$userId)->first();      
             if($roleId == 2){
                 $valdiation = Validator::make($request->all(),[
                     'title' => 'required', 
@@ -41,20 +41,31 @@ class AnnouncementController extends Controller
 
                 $id = $request['id'];    
                 $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($id);
-               
-                if($checkAnnouncement){
-                    // update announcement
-                    $checkProfile = $this->userService->UpdateAnnouncement($request,$id);
-                    $msg=__("api_string.announcement_updated");
-                    return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
-    
-                }else{
-                    //add  announcement
-                    $addAnnouncement = $this->userService->AddAnnouncement($request,$userId,$profileId[0]);
-                    $msg=__("api_string.announcement_added");
-                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);
-    
+                $socialmediacheck = in_array($request['social_platform'],Config('app.stream'));
+
+                if(!$socialmediacheck){
+                    $msg=__("api_string.valid_stream");
+                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
                 }
+
+                if($profileId !=null){
+                    if($checkAnnouncement){
+                        // update announcement
+                        $checkProfile = $this->userService->UpdateAnnouncement($request,$id);
+                        $msg=__("api_string.announcement_updated");
+                        return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
+        
+                    }else{
+                        //add  announcement
+                        $addAnnouncement = $this->userService->AddAnnouncement($request,$userId,$profileId['id']);
+                        $msg=__("api_string.announcement_added");
+                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);     
+                    }
+                } else{
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
+                }
+                
+
             }else{
                 //Not Author ized
                 $msg=__("api_string.not_authorized");
@@ -63,7 +74,7 @@ class AnnouncementController extends Controller
             
         } catch (\Throwable $th) {
             $msg= __("api_string.error");
-            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage(), 'trace'=>$th->getTraceAsString()]);
         }
     }
 

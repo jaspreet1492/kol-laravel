@@ -41,6 +41,11 @@ class KolProfile extends Model
     
     }
 
+    public function getFeedbacks(){
+        return $this->hasMany(Feedback::class,'kol_profile_id','id');
+    
+    }
+
 }
 
 

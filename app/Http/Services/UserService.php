@@ -11,6 +11,7 @@ use App\Models\ChatThread;
 use App\Models\Announcement;
 use App\Models\SocialMedia;
 use App\Models\Feedback;
+use App\Models\Banner;
 use App\Http\Controllers\MailController;
 use App\Models\KolType;
 use App\Models\Bookmark;
@@ -37,55 +38,61 @@ class UserService
     public function saveChat($request, $userId)
     {
         // dd($request['receiver_id']);
-        $checkChat = Chat::where(function($query) use($userId,$request){
-            $query->where(function($q) use($userId, $request){
-                $q->where('sender_id',$request['receiver_id'])
-                ->where('receiver_id',$userId);
+        $checkUser = User::where('id', $request['receiver_id'])->first();
+        if($checkUser){
+            $checkChat = Chat::where(function($query) use($userId,$request){
+                $query->where(function($q) use($userId, $request){
+                    $q->where('sender_id',$request['receiver_id'])
+                    ->where('receiver_id',$userId);
+                })
+                ->orWhere(function($q) use($userId, $request){
+                    $q->where('sender_id',$userId)
+                    ->where('receiver_id',$request['receiver_id']);
+                });
             })
-            ->orWhere(function($q) use($userId, $request){
-                $q->where('sender_id',$userId)
-                ->where('receiver_id',$request['receiver_id']);
-            });
-        })
-        ->first();
-
-        if(($checkChat==null)){
-            $chatData = new Chat();
-            $chatData->sender_id = $userId;
-            $chatData->receiver_id = $request['receiver_id'];
-            $chatData->message = $request['message'];
-            $chat = $chatData->save();
-            $lastChatId = $chatData->id;
-            if($chatData){
+            ->first();
+    
+            if(($checkChat==null)){
+                $chatData = new Chat();
+                $chatData->sender_id = $userId;
+                $chatData->receiver_id = $request['receiver_id'];
+                $chatData->message = $request['message'];
+                $chat = $chatData->save();
+                $lastChatId = $chatData->id;
+                if($chatData){
+                    $chatThreadData = new ChatThread();
+                $chatThreadData->sender_id = $userId;
+                $chatThreadData->chat_id = $lastChatId;
+                $chatThreadData->receiver_id = $request['receiver_id'];
+                $chatThreadData->message = $request['message'];
+                $chatThread = $chatThreadData->save();
+                return $chatThread;
+                }else{
+                    return 0;
+                }
+                
+               
+            }else{
+    
+                // dd($checkChat->id);
+                $result = Chat::where(['id'=> $checkChat->id])->update(['receiver_id'=>$request['receiver_id'],'sender_id'=>$userId,'message'=>$request['message']]);
+                if($result){
                 $chatThreadData = new ChatThread();
-            $chatThreadData->sender_id = $userId;
-            $chatThreadData->chat_id = $lastChatId;
-            $chatThreadData->receiver_id = $request['receiver_id'];
-            $chatThreadData->message = $request['message'];
-            $chatThread = $chatThreadData->save();
-            return $chatThread;
-            }else{
-                return 0;
+                $chatThreadData->sender_id = $userId;
+                $chatThreadData->chat_id = $checkChat->id;
+                $chatThreadData->receiver_id = $request['receiver_id'];
+                $chatThreadData->message = $request['message'];
+                $chatThread = $chatThreadData->save();
+                return $chatThread;
+                }else{
+                    return 0;
+                }
+              
             }
-            
-           
         }else{
-
-            // dd($checkChat->id);
-            $result = Chat::where(['id'=> $checkChat->id])->update(['receiver_id'=>$request['receiver_id'],'sender_id'=>$userId,'message'=>$request['message']]);
-            if($result){
-            $chatThreadData = new ChatThread();
-            $chatThreadData->sender_id = $userId;
-            $chatThreadData->chat_id = $checkChat->id;
-            $chatThreadData->receiver_id = $request['receiver_id'];
-            $chatThreadData->message = $request['message'];
-            $chatThread = $chatThreadData->save();
-            return $chatThread;
-            }else{
-                return 0;
-            }
-          
+            return 0;
         }
+      
         
         
     }
@@ -103,8 +110,8 @@ class UserService
     foreach($chatData as $chatDatas){
         $obj = [];
             // $obj['userData'] = $chatDatas->getUser;
-            $obj['name']=$chatDatas->getReceiver->name;
-            $obj['last_name']=$chatDatas->getReceiver->last_name;
+            $obj['name']=$chatDatas->getSender->name;
+            $obj['last_name']=$chatDatas->getSender->last_name;
             // $obj['userData']['role_id']=$chatDatas->getReceiver->role_id;
             $obj['avatar']=(isset($chatDatas->kolProfile->avatar)&& $chatDatas->kolProfile->avatar!=NULL)?$chatDatas->kolProfile->avatar:$chatDatas->getReceiver->avatar;
             // $obj['userData']['email']=$chatDatas->getReceiver->email;
@@ -135,7 +142,7 @@ class UserService
     $data =[];
     foreach($chatData as $chatDatas){
         $obj = [];
-            $obj['name']=$chatDatas->getSender->name;
+            $obj['name']= ($chatDatas->receiver_id==$userId)?$chatDatas->getSender->name:$chatDatas->getReceiver->name;
             $obj['last_name']=$chatDatas->getSender->last_name;
             $obj['avatar']=(isset($chatDatas->kolProfile->avatar)&& $chatDatas->kolProfile->avatar!=NULL)?$chatDatas->kolProfile->avatar:$chatDatas->getSender->avatar;
             $obj['last_msg'] = $chatDatas->message;
@@ -279,12 +286,10 @@ class UserService
     {
         $updatePass = User::where('email', $email)->update(['password' => Hash::make($request['new_password'])]);
         if ($updatePass) {
-            // $input = $request->only('email', 'new_password');
             $input = [];
             $input['email'] = $email;
             $input['password'] = $request['new_password'];
             $token = JWTAuth::attempt($input);
-            // // Store token in user tokens table
             $saveToken = new UserTokens();
             $saveToken->user_id = $userId;
             $saveToken->token = $token;
@@ -416,6 +421,8 @@ class UserService
 
         if ($lastProfileId) {
             foreach ($request['social_media'] as $requestMediaData) {
+                $newArr =  json_decode($requestMediaData, true);
+                $requestMediaData = $newArr[0];
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $lastProfileId;
@@ -489,6 +496,20 @@ class UserService
         return $lastFeedbackId;
     }
 
+    // Add Banner
+public function AddBanner($request,$endUserId)
+    {
+        $BannerData = new Banner();
+        $BannerData->user_id = $endUserId;
+        $BannerData->title = $request['title'];
+        $BannerData->description = $request['description'];
+        $BannerData->banner = Banner::makeImageUrl($request['banner']);
+        $BannerDataSaved = $BannerData->save();
+        $lastBannerId = $BannerData->id;
+
+        return $lastBannerId;
+    }
+
     // View KolType
     public function ViewKolType($id)
     {
@@ -531,27 +552,27 @@ class UserService
             $listFeedbacks[$i]['kol_profile_id'] = $FeedbackList['kol_profile_id'];
             $listFeedbacks[$i]['comment'] = $FeedbackList['comment'];
             $listFeedbacks[$i]['rating'] = $FeedbackList['rating'];
-            $listFeedbacks[$i]['profile_id'] = $FeedbackList['getKolProfile'][0]['id'];
-            $listFeedbacks[$i]['languages'] = $FeedbackList['getKolProfile'][0]['languages'];
-            $listFeedbacks[$i]['bio'] = $FeedbackList['getKolProfile'][0]['bio'];
-            $listFeedbacks[$i]['avatar'] = $FeedbackList['getKolProfile'][0]['avatar'];
-            $listFeedbacks[$i]['personal_email'] = $FeedbackList['getKolProfile'][0]['personal_email'];
-            $listFeedbacks[$i]['kol_type'] = $FeedbackList['getKolProfile'][0]['kol_type'];
-            $listFeedbacks[$i]['state'] = $FeedbackList['getKolProfile'][0]['state'];
-            $listFeedbacks[$i]['city'] = $FeedbackList['getKolProfile'][0]['city'];
-            $listFeedbacks[$i]['zip_code'] = $FeedbackList['getKolProfile'][0]['zip_code'];
-            $listFeedbacks[$i]['total_viewer'] = $FeedbackList['getKolProfile'][0]['total_viewer'];
-            $listFeedbacks[$i]['banner'] = $FeedbackList['getKolProfile'][0]['banner'];
-            $listFeedbacks[$i]['social_active'] = $FeedbackList['getKolProfile'][0]['social_active'];
-            $listFeedbacks[$i]['video_links'] = $FeedbackList['getKolProfile'][0]['video_links'];
-            $listFeedbacks[$i]['tags'] = $FeedbackList['getKolProfile'][0]['tags'];
-            $listFeedbacks[$i]['user_id'] = $FeedbackList['getUser'][0]['id'];
-            $listFeedbacks[$i]['username'] = $FeedbackList['getUser'][0]['name'];
-            $listFeedbacks[$i]['email'] = $FeedbackList['getUser'][0]['email'];
-            $listFeedbacks[$i]['role_id'] = $FeedbackList['getUser'][0]['role_id'];
-            $listFeedbacks[$i]['profile_image'] = $FeedbackList['getUser'][0]['avatar'];
-            $listFeedbacks[$i]['gender'] = $FeedbackList['getUser'][0]['gender'];
-            $listFeedbacks[$i]['phone'] = $FeedbackList['getUser'][0]['phone'];
+            $listFeedbacks[$i]['profile_id'] = $FeedbackList['getKolProfile']['id'];
+            $listFeedbacks[$i]['languages'] = $FeedbackList['getKolProfile']['languages'];
+            $listFeedbacks[$i]['bio'] = $FeedbackList['getKolProfile']['bio'];
+            $listFeedbacks[$i]['avatar'] = $FeedbackList['getKolProfile']['avatar'];
+            $listFeedbacks[$i]['personal_email'] = $FeedbackList['getKolProfile']['personal_email'];
+            $listFeedbacks[$i]['kol_type'] = $FeedbackList['getKolProfile']['kol_type'];
+            $listFeedbacks[$i]['state'] = $FeedbackList['getKolProfile']['state'];
+            $listFeedbacks[$i]['city'] = $FeedbackList['getKolProfile']['city'];
+            $listFeedbacks[$i]['zip_code'] = $FeedbackList['getKolProfile']['zip_code'];
+            $listFeedbacks[$i]['total_viewer'] = $FeedbackList['getKolProfile']['total_viewer'];
+            $listFeedbacks[$i]['banner'] = $FeedbackList['getKolProfile']['banner'];
+            $listFeedbacks[$i]['social_active'] = $FeedbackList['getKolProfile']['social_active'];
+            $listFeedbacks[$i]['video_links'] = $FeedbackList['getKolProfile']['video_links'];
+            $listFeedbacks[$i]['tags'] = $FeedbackList['getKolProfile']['tags'];
+            $listFeedbacks[$i]['user_id'] = $FeedbackList['getUser']['id'];
+            $listFeedbacks[$i]['username'] = $FeedbackList['getUser']['name'];
+            $listFeedbacks[$i]['email'] = $FeedbackList['getUser']['email'];
+            $listFeedbacks[$i]['role_id'] = $FeedbackList['getUser']['role_id'];
+            $listFeedbacks[$i]['profile_image'] = $FeedbackList['getUser']['avatar'];
+            $listFeedbacks[$i]['gender'] = $FeedbackList['getUser']['gender'];
+            $listFeedbacks[$i]['phone'] = $FeedbackList['getUser']['phone'];
 
             $i++;
         }
@@ -562,7 +583,7 @@ class UserService
     // get End Users Feedback
     public function getEndUserFeedbackList($userId)
     {
-        $FeedbackLists = Feedback::where('end_user_id', $userId)->with('getKolProfile')->with('getUser')->get();
+        $FeedbackLists = Feedback::where('end_user_id', $userId)->get();
 
         $listFeedbacks = [];
         $i = 0;
@@ -574,27 +595,27 @@ class UserService
             $listFeedbacks[$i]['kol_profile_id'] = $FeedbackList['kol_profile_id'];
             $listFeedbacks[$i]['comment'] = $FeedbackList['comment'];
             $listFeedbacks[$i]['rating'] = $FeedbackList['rating'];
-            $listFeedbacks[$i]['profile_id'] = $FeedbackList['getKolProfile'][0]['id'];
-            $listFeedbacks[$i]['languages'] = $FeedbackList['getKolProfile'][0]['languages'];
-            $listFeedbacks[$i]['bio'] = $FeedbackList['getKolProfile'][0]['bio'];
-            $listFeedbacks[$i]['avatar'] = $FeedbackList['getKolProfile'][0]['avatar'];
-            $listFeedbacks[$i]['personal_email'] = $FeedbackList['getKolProfile'][0]['personal_email'];
-            $listFeedbacks[$i]['kol_type'] = $FeedbackList['getKolProfile'][0]['kol_type'];
-            $listFeedbacks[$i]['state'] = $FeedbackList['getKolProfile'][0]['state'];
-            $listFeedbacks[$i]['city'] = $FeedbackList['getKolProfile'][0]['city'];
-            $listFeedbacks[$i]['zip_code'] = $FeedbackList['getKolProfile'][0]['zip_code'];
-            $listFeedbacks[$i]['total_viewer'] = $FeedbackList['getKolProfile'][0]['total_viewer'];
-            $listFeedbacks[$i]['banner'] = $FeedbackList['getKolProfile'][0]['banner'];
-            $listFeedbacks[$i]['social_active'] = $FeedbackList['getKolProfile'][0]['social_active'];
-            $listFeedbacks[$i]['video_links'] = $FeedbackList['getKolProfile'][0]['video_links'];
-            $listFeedbacks[$i]['tags'] = $FeedbackList['getKolProfile'][0]['tags'];
-            $listFeedbacks[$i]['user_id'] = $FeedbackList['getUser'][0]['id'];
-            $listFeedbacks[$i]['username'] = $FeedbackList['getUser'][0]['name'];
-            $listFeedbacks[$i]['email'] = $FeedbackList['getUser'][0]['email'];
-            $listFeedbacks[$i]['role_id'] = $FeedbackList['getUser'][0]['role_id'];
-            $listFeedbacks[$i]['profile_image'] = $FeedbackList['getUser'][0]['avatar'];
-            $listFeedbacks[$i]['gender'] = $FeedbackList['getUser'][0]['gender'];
-            $listFeedbacks[$i]['phone'] = $FeedbackList['getUser'][0]['phone'];
+            $listFeedbacks[$i]['profile_id'] = $FeedbackList['getKolProfile']['id'];
+            $listFeedbacks[$i]['languages'] = $FeedbackList['getKolProfile']['languages'];
+            $listFeedbacks[$i]['bio'] = $FeedbackList['getKolProfile']['bio'];
+            $listFeedbacks[$i]['avatar'] = $FeedbackList['getKolProfile']['avatar'];
+            $listFeedbacks[$i]['personal_email'] = $FeedbackList['getKolProfile']['personal_email'];
+            $listFeedbacks[$i]['kol_type'] = $FeedbackList['getKolProfile']['kol_type'];
+            $listFeedbacks[$i]['state'] = $FeedbackList['getKolProfile']['state'];
+            $listFeedbacks[$i]['city'] = $FeedbackList['getKolProfile']['city'];
+            $listFeedbacks[$i]['zip_code'] = $FeedbackList['getKolProfile']['zip_code'];
+            $listFeedbacks[$i]['total_viewer'] = $FeedbackList['getKolProfile']['total_viewer'];
+            $listFeedbacks[$i]['banner'] = $FeedbackList['getKolProfile']['banner'];
+            $listFeedbacks[$i]['social_active'] = $FeedbackList['getKolProfile']['social_active'];
+            $listFeedbacks[$i]['video_links'] = $FeedbackList['getKolProfile']['video_links'];
+            $listFeedbacks[$i]['tags'] = $FeedbackList['getKolProfile']['tags'];
+            $listFeedbacks[$i]['user_id'] = $FeedbackList['getUser']['id'];
+            $listFeedbacks[$i]['username'] = $FeedbackList['getUser']['name'];
+            $listFeedbacks[$i]['email'] = $FeedbackList['getUser']['email'];
+            $listFeedbacks[$i]['role_id'] = $FeedbackList['getUser']['role_id'];
+            $listFeedbacks[$i]['profile_image'] = $FeedbackList['getUser']['avatar'];
+            $listFeedbacks[$i]['gender'] = $FeedbackList['getUser']['gender'];
+            $listFeedbacks[$i]['phone'] = $FeedbackList['getUser']['phone'];
 
             $i++;
         }
@@ -635,6 +656,33 @@ class UserService
         return $updateResponse;
     }
 
+    // Update Banner
+    public function UpdateBanner($request, $id)
+    {
+        $id = ($request['id']) ? $request['id'] : NULL;
+        $Banner = ($request['image']) ? Banner::makeImageUrl($request['image']) : NULL;
+        $updateData = [];
+
+        if ($Banner) {
+            
+            $updateData = [
+                'title' => $request['title'],
+                'description' => $request['description'],
+                'banner' => $Banner,
+            ];
+
+        } else {
+            $updateData = [
+                'title' => $request['title'],
+                'description' => $request['description'],
+            ];
+        }
+
+        $updateResponse = Banner::where('id', $id)->update($updateData);
+
+        return $updateResponse;
+    }
+
     public function ViewAnnouncementById($id)
     {
         $announcementData = Announcement::where('announcements.id', $id)->with('getUser')->get();
@@ -661,6 +709,13 @@ class UserService
         return $AnnouncementList;
     }
 
+    public function getBannerList(){
+
+        $BannerList = Banner::where('status',1)->get();
+
+        return $BannerList;
+    }
+
     public function getBookmarks($userId){
 
         $BookmarkLists = Bookmark::where('end_user_id',$userId)->where('status',1)->with('getKolProfile')->with('getUser')->get();
@@ -671,27 +726,27 @@ class UserService
             $listBookMarks[$i]['end_user_id'] = $BookmarkList['end_user_id'];
             $listBookMarks[$i]['kol_user_id'] = $BookmarkList['kol_user_id'];
             $listBookMarks[$i]['kol_profile_id'] = $BookmarkList['kol_profile_id'];
-            $listBookMarks[$i]['profile_id'] = $BookmarkList['getKolProfile'][0]['id'];
-            $listBookMarks[$i]['languages'] = $BookmarkList['getKolProfile'][0]['languages'];
-            $listBookMarks[$i]['bio'] = $BookmarkList['getKolProfile'][0]['bio'];
-            $listBookMarks[$i]['avatar'] = $BookmarkList['getKolProfile'][0]['avatar'];
-            $listBookMarks[$i]['personal_email'] = $BookmarkList['getKolProfile'][0]['personal_email'];
-            $listBookMarks[$i]['kol_type'] = $BookmarkList['getKolProfile'][0]['kol_type'];
-            $listBookMarks[$i]['state'] = $BookmarkList['getKolProfile'][0]['state'];
-            $listBookMarks[$i]['city'] = $BookmarkList['getKolProfile'][0]['city'];
-            $listBookMarks[$i]['zip_code'] = $BookmarkList['getKolProfile'][0]['zip_code'];
-            $listBookMarks[$i]['total_viewer'] = $BookmarkList['getKolProfile'][0]['total_viewer'];
-            $listBookMarks[$i]['banner'] = $BookmarkList['getKolProfile'][0]['banner'];
-            $listBookMarks[$i]['social_active'] = $BookmarkList['getKolProfile'][0]['social_active'];
-            $listBookMarks[$i]['video_links'] = $BookmarkList['getKolProfile'][0]['video_links'];
-            $listBookMarks[$i]['tags'] = $BookmarkList['getKolProfile'][0]['tags'];
-            $listBookMarks[$i]['user_id'] = $BookmarkList['getUser'][0]['id'];
-            $listBookMarks[$i]['username'] = $BookmarkList['getUser'][0]['name'];
-            $listBookMarks[$i]['email'] = $BookmarkList['getUser'][0]['email'];
-            $listBookMarks[$i]['role_id'] = $BookmarkList['getUser'][0]['role_id'];
-            $listBookMarks[$i]['profile_image'] = $BookmarkList['getUser'][0]['avatar'];
-            $listBookMarks[$i]['gender'] = $BookmarkList['getUser'][0]['gender'];
-            $listBookMarks[$i]['phone'] = $BookmarkList['getUser'][0]['phone'];
+            $listBookMarks[$i]['profile_id'] = $BookmarkList['getKolProfile']['id'];
+            $listBookMarks[$i]['languages'] = $BookmarkList['getKolProfile']['languages'];
+            $listBookMarks[$i]['bio'] = $BookmarkList['getKolProfile']['bio'];
+            $listBookMarks[$i]['avatar'] = $BookmarkList['getKolProfile']['avatar'];
+            $listBookMarks[$i]['personal_email'] = $BookmarkList['getKolProfile']['personal_email'];
+            $listBookMarks[$i]['kol_type'] = $BookmarkList['getKolProfile']['kol_type'];
+            $listBookMarks[$i]['state'] = $BookmarkList['getKolProfile']['state'];
+            $listBookMarks[$i]['city'] = $BookmarkList['getKolProfile']['city'];
+            $listBookMarks[$i]['zip_code'] = $BookmarkList['getKolProfile']['zip_code'];
+            $listBookMarks[$i]['total_viewer'] = $BookmarkList['getKolProfile']['total_viewer'];
+            $listBookMarks[$i]['banner'] = $BookmarkList['getKolProfile']['banner'];
+            $listBookMarks[$i]['social_active'] = $BookmarkList['getKolProfile']['social_active'];
+            $listBookMarks[$i]['video_links'] = $BookmarkList['getKolProfile']['video_links'];
+            $listBookMarks[$i]['tags'] = $BookmarkList['getKolProfile']['tags'];
+            $listBookMarks[$i]['user_id'] = $BookmarkList['getUser']['id'];
+            $listBookMarks[$i]['username'] = $BookmarkList['getUser']['name'];
+            $listBookMarks[$i]['email'] = $BookmarkList['getUser']['email'];
+            $listBookMarks[$i]['role_id'] = $BookmarkList['getUser']['role_id'];
+            $listBookMarks[$i]['profile_image'] = $BookmarkList['getUser']['avatar'];
+            $listBookMarks[$i]['gender'] = $BookmarkList['getUser']['gender'];
+            $listBookMarks[$i]['phone'] = $BookmarkList['getUser']['phone'];
 
             $i++;
         }
@@ -711,6 +766,12 @@ class UserService
         $Announcement = Announcement::where('id',$id)->delete();
 
         return $Announcement;
+    }
+    public function deleteBanner($id){
+
+        $Banner = Banner::where('id',$id)->delete();
+
+        return $Banner;
     }
     
     public function deleteBookmark($kol_profile_id,$endUserId){
@@ -816,7 +877,9 @@ class UserService
             if($socialMedia>0){
                 $socialAccounts = SocialMedia::where('user_id', $userId)->delete();
             }
-            foreach ($request['social_media'] as $requestMediaData) {
+            foreach ($request['social_media'] as $requestMediaData) {                
+                $newArr =  json_decode($requestMediaData, true);
+                $requestMediaData = $newArr[0];
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $profile_id[0];
@@ -826,7 +889,22 @@ class UserService
                 $kolSocialData->followers = $requestMediaData['followers'];
                 $kolSocialMedia = $kolSocialData->save();
             }
-        }
+        }        
+
+        return $updateResponse;
+    }
+    public function FeatureKolProfile($request)
+    {
+
+        $kol_profile_id = $request['kol_profile_id'];
+        $is_featured = $request['is_featured'];
+        $updateData = [];
+        
+        $updateData = [
+            'is_featured' => $is_featured
+        ];
+
+        $updateResponse = KolProfile::where('id', $kol_profile_id)->update($updateData);
 
         return $updateResponse;
     }
@@ -851,6 +929,11 @@ class UserService
     public function checkAnnouncementExistOrNot($Id)
     {
         return Announcement::where('id', $Id)->first();
+    }
+
+    public function checkBannerExistOrNot($Id)
+    {
+        return Banner::where('id', $Id)->first();
     }
 
     public function checkBookmarkExistOrNot($endUserId,$kol_profile_id)
@@ -956,6 +1039,69 @@ class UserService
             $i++;
         }
         
+        return $listProfiles;
+    }
+    
+    public function getFeaturedProfileList($request){
+        
+       
+        $kolProfiles = KolProfile::with('getUser','getSocialMedia', 'getBookmark', 'getFeedbacks')->where('is_featured', 1)->where('status', 1)->get();
+        $listProfiles = [];
+        $listSocialMedia = [];
+        $listFeedback = [];
+        $i = 0;
+        //dd($kolProfiles);
+        foreach($kolProfiles as $key => $profileList){
+            // dd($profileList);
+            $listProfiles[$i]['profile_id'] = $profileList['id'];
+            $listProfiles[$i]['languages'] = $profileList['languages'];
+            $listProfiles[$i]['is_featured'] = $profileList['is_featured'];
+            $listProfiles[$i]['bio'] = $profileList['bio'];
+            $listProfiles[$i]['avatar'] = $profileList['avatar'];
+            $listProfiles[$i]['personal_email'] = $profileList['personal_email'];
+            $listProfiles[$i]['kol_type'] = $profileList['kol_type'];
+            $listProfiles[$i]['state'] = $profileList['state'];
+            $listProfiles[$i]['city'] = $profileList['city'];
+            $listProfiles[$i]['zip_code'] = $profileList['zip_code'];
+            $listProfiles[$i]['total_viewer'] = $profileList['total_viewer'];
+            $listProfiles[$i]['banner'] = $profileList['banner'];
+            $listProfiles[$i]['social_active'] = $profileList['social_active'];
+            $listProfiles[$i]['video_links'] = $profileList['video_links'];
+            $listProfiles[$i]['tags'] = $profileList['tags'];
+            $listProfiles[$i]['user_id'] = $profileList['getUser']['id'];
+            $listProfiles[$i]['username'] = $profileList['getUser']['name'];
+            $listProfiles[$i]['email'] = $profileList['getUser']['email'];
+            $listProfiles[$i]['role_id'] = $profileList['getUser']['role_id'];
+            $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
+            $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
+            $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
+            $listProfiles[$i]['bookmark'] = ($profileList['getBookmark']==null)? false : true;
+            // dd($profileList['getFeedbacks']);
+            $j = 0;
+            foreach($profileList['getSocialMedia'] as $socialAccounts){
+                $listSocialMedia[$j]['social_media_id'] = $socialAccounts['id'];
+                $listSocialMedia[$j]['social_platform'] = $socialAccounts['name'];
+                $listSocialMedia[$j]['social_icon'] = $socialAccounts['social_icon'];
+                $listSocialMedia[$j]['social_media_username'] = $socialAccounts['social_user_id'];
+                $listSocialMedia[$j]['followers'] = $socialAccounts['followers'];
+                $j++;
+            }
+            $k=0;
+            
+            foreach($profileList['getFeedbacks'] as $feedbacks){
+                $listFeedback[$k]['feedback_id'] = $feedbacks['id'];
+                $listFeedback[$k]['end_user_id'] = $feedbacks['end_user_id'];
+                $listFeedback[$k]['kol_profile_id'] = $feedbacks['kol_profile_id'];
+                $listFeedback[$k]['comment'] = $feedbacks['comment'];
+                $listFeedback[$k]['rating'] = $feedbacks['rating'];
+                $k++;
+            }
+         
+            $listProfiles[$i]['SocialMedia'] = $listSocialMedia;
+            $listProfiles[$i]['Feedbacks'] = $listFeedback;
+
+            $i++;
+        }
         return $listProfiles;
     }
 

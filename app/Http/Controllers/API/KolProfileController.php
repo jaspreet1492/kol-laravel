@@ -52,7 +52,7 @@ class KolProfileController extends Controller
     }
 
     public function AddOrUpdateKolProfile(Request $request){
-        
+    
         try {
             $roleId = auth()->user()->role_id;
             if($roleId == 2){
@@ -64,7 +64,6 @@ class KolProfileController extends Controller
                     'city' => 'required|alpha', 
                     'bio' => 'required',
                     'avatar' => 'required',
-                    // 'total_viewer' => 'required|alpha_num', 
                     'banner' => 'required',
                     'video_links.*'=>'required|url',
                     'tags.*' => 'required',
@@ -79,7 +78,7 @@ class KolProfileController extends Controller
                     $msg = $valdiation->errors()->first();
                     return response()->json(["message"=>$msg, "statusCode"=>422]);
                 }
-                
+                           
                 $langauges = Config('app.languages');
                 $states = Config('app.states');
                 $streams = Config('app.stream');
@@ -137,6 +136,41 @@ class KolProfileController extends Controller
         }
     }
 
+
+    public function FeatureKolProfile(Request $request){
+        
+        try {
+            $roleId = auth()->user()->role_id;
+            if($roleId == 1){
+
+                if($request['is_featured'] === 1){
+                    // feature kol profile
+                    $checkProfile = $this->userService->FeatureKolProfile($request);
+                    $msg=__("api_string.featured_profile");
+                    return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
+                } 
+                if($request['is_featured'] === 0){
+                    // unfeature kol profile
+                    $checkProfile = $this->userService->FeatureKolProfile($request);
+                    $msg=__("api_string.unfeatured_profile");
+                    return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
+                    
+                } else {
+                    $msg= __("api_string.error");
+                    return response()->json(["statusCode"=>422,"status"=>false,"message"=>$msg]);
+                }
+  
+            }else{
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+            }
+            
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
+    }
+
     public function getKolProfileById(Request $request){
         
         $endUserId = auth()->user()->id;
@@ -152,6 +186,11 @@ class KolProfileController extends Controller
 
     public function getProfileList(Request $request){
         $kolProfiles = $this->userService->KolProfileList($request);
+        return response()->json(["status"=>true,"statusCode"=>200,"kolProfiles"=>$kolProfiles]);
+    }
+
+    public function getFeaturedProfileList(Request $request){
+        $kolProfiles = $this->userService->getFeaturedProfileList($request);
         return response()->json(["status"=>true,"statusCode"=>200,"kolProfiles"=>$kolProfiles]);
     }
 }

@@ -14,6 +14,7 @@ use App\Http\Controllers\API\AnnouncementController;
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\BookmarkController;
 use App\Http\Controllers\API\FeedbackController;
+use App\Http\Controllers\API\BannerController;
 
 
 Route::middleware(['api'])->group(function () {
@@ -44,7 +45,9 @@ Route::middleware(['api'])->group(function () {
     Route::post('kol-profile/add-update',[KolProfileController::Class,'AddOrUpdateKolProfile']);
     Route::get('kol-profile/view',[KolProfileController::Class,'getKolProfileById']);
     Route::get('kol-profile/list',[KolProfileController::Class,'getProfileList']);
+    Route::get('kol-profile/featured-list',[KolProfileController::Class,'getFeaturedProfileList']);
     Route::put('kol-profile/add-view-count',[KolProfileController::Class,'saveProfileView']);
+    Route::put('kol-profile/is_featured',[KolProfileController::Class,'FeatureKolProfile']);
     Route::post('announcement/add-update',[AnnouncementController::Class,'AddorUpdateAnnouncement']);
     Route::post('bookmark/add',[BookmarkController::Class,'AddBookmark']);
     Route::post('feedback/add',[FeedbackController::Class,'AddFeedback']);
@@ -81,8 +84,10 @@ Route::middleware(['api'])->group(function () {
     Route::get('category/view',[CategoryController::Class,'viewCategory']);
     Route::post('category/edit',[CategoryController::Class,'editCategory']);
     Route::put('category/edit/status',[CategoryController::Class,'ChangeCategoryStatus']);
-
     Route::post('updateCategory',[CategoryController::Class,'makeUpdation']);
+    Route::post('banner/add-banner',[BannerController::Class,'AddBanner']);
+    Route::get('banner/list',[BannerController::Class,'getBannerList']);
+    Route::delete('banner/delete',[BannerController::Class,'deleteBanner']);
 
   }); 
 
