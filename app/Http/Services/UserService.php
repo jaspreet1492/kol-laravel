@@ -891,7 +891,7 @@ public function AddBanner($request,$endUserId)
             }
         }        
 
-        return $updateResponse;
+        return $updateResponse; 
     }
     public function FeatureKolProfile($request)
     {
