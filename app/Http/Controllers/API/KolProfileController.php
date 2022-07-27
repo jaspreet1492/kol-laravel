@@ -147,23 +147,27 @@ class KolProfileController extends Controller
             $roleId = auth()->user()->role_id;
             if($roleId == 1){
 
+                $kolProfileData = $this->userService->checkKolProfileIdExistOrNot($request['kol_profile_id']);
+                
+                if(!$kolProfileData){
+                    return response()->json(["statusCode"=>422,"status"=>false,"message"=>"kol profile does not exist"]);
+                }
+
                 if($request['is_featured'] === 1){
                     // feature kol profile
                     $checkProfile = $this->userService->FeatureKolProfile($request);
                     $msg=__("api_string.featured_profile");
-                    return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
                 } 
                 if($request['is_featured'] === 0){
                     // unfeature kol profile
                     $checkProfile = $this->userService->FeatureKolProfile($request);
-                    $msg=__("api_string.unfeatured_profile");
-                    return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
+                    $msg=__("api_string.unfeatured_profile");    
                     
                 } else {
                     $msg= __("api_string.error");
                     return response()->json(["statusCode"=>422,"status"=>false,"message"=>$msg]);
                 }
-  
+                return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
             }else{
                 $msg=__("api_string.not_authorized");
                 return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);

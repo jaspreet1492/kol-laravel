@@ -81,7 +81,7 @@ Route::middleware(['api'])->group(function () {
   
   Route::group(['middleware' => 'isAdmin'], function () {
   
-    Route::post('dashboard/add-update-banner',[DashboardController::class,'AddBanner']);
+    Route::post('dashboard/add-update-banner',[DashboardController::class,'AddUpdateBanner']);
     Route::post('dashboard/add-update-faq',[DashboardController::class,'AddUpdateFaq']);
     Route::get('dashboard/banner-list',[DashboardController::class,'getBannerList']);
     Route::get('dashboard/faq-list',[DashboardController::class,'getFaqList']);

@@ -126,7 +126,7 @@ class DashboardController extends Controller
 
     }
 
-    public function AddBanner(Request $request){
+    public function AddUpdateBanner(Request $request){
 
         try {
             $roleId = auth()->user()->role_id;

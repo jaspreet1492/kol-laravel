@@ -38,7 +38,7 @@ class FeedbackController extends Controller
                 $checkKolUser = $this->userService->ViewKolProfileById($kol_profile_id);
                 
                 if(!$checkKolUser){
-                    return response()->json(["status"=>true,'statusCode'=>401,"message"=>"Ivalid Kol id"]);
+                    return response()->json(["status"=>true,'statusCode'=>401,"message"=>"Invalid Kol id"]);
                 }
 
                 $kol_user_id = $checkKolUser[0]['user_id'];

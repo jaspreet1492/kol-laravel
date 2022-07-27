@@ -103,6 +103,7 @@ class AnnouncementController extends Controller
     }
 
     public function deleteAnnouncement(Request $request){
+        $userId = auth()->user()->id;
         $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($request['id'],$userId);
         if($checkAnnouncement){
             $announcementData = $this->userService->deleteAnnouncement($request['id']);

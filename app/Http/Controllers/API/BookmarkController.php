@@ -35,8 +35,12 @@ class BookmarkController extends Controller
                 $kol_profile_id = $request['kol_profile_id'];    
                 $checkKolUser = $this->userService->ViewKolProfileById($kol_profile_id);
                 $checkBookmark = $this->userService->checkBookmarkExistOrNot($endUserId,$kol_profile_id);
+
+                if(!$checkKolUser){
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Kol profile does not exist"]);
+                }
+
                 $kol_user_id = $checkKolUser[0]['user_id'];
-               
                 if(empty($checkBookmark)){
                     $addBookmark = $this->userService->AddBookmark($kol_profile_id,$endUserId,$kol_user_id);
                     $msg=__("api_string.bookmark_added");
