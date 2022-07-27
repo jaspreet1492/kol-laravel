@@ -23,7 +23,7 @@ class CreateContactUs extends Migration
             $table->integer('status')->default(1);
             $table->timestamps();
         });
-    }
+    } 
 
     /**
      * Reverse the migrations.
