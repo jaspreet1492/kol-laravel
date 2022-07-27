@@ -49,7 +49,7 @@ class BookmarkController extends Controller
             }else{
                 //Not Author ized
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
             
         } catch (\Throwable $th) {

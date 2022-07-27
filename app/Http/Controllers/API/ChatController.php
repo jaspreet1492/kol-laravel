@@ -58,6 +58,14 @@ class ChatController extends Controller
     public function getChatData(Request $request)
     {
     try{
+        $valdiation = Validator::make($request->all(),[
+            'receiver_id' => 'required', 
+           
+        ]);
+        if($valdiation->fails()) {
+            $msg = __("api_string.invalid_fields");
+            return response()->json(["message"=>$msg, "statusCode"=>422]);
+        }
         $roleId = auth()->user()->role_id;
         $userId = auth()->user()->id;
         if($roleId ==2 ||$roleId ==3 ){
@@ -68,7 +76,7 @@ class ChatController extends Controller
                 return response()->json(["status"=>true,'statusCode'=>201,"data"=>$response,"message"=>$msg]);
             }else{
                 $msg= __("api_string.error");
-                return response()->json(["statusCode"=>422,"status"=>false,"message"=>$msg]);
+                return response()->json(["statusCode"=>404,"data"=>[], "status"=>true]);
             }
         }else{
             $msg= __("api_string.not_authorized");

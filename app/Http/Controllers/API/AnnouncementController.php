@@ -31,7 +31,7 @@ class AnnouncementController extends Controller
                     'description' => 'required', 
                     'start_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:', 
                     'end_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:',
-                    'image' => 'required', 
+                    'image' => 'required|mimes:png,jpeg,jpg', 
                     'social_platform' => 'required'
                 ]);
                 if($valdiation->fails()) {
@@ -40,7 +40,8 @@ class AnnouncementController extends Controller
                 }
 
                 $id = $request['id'];    
-                $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($id);
+
+                $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($id,$userId);
                 $socialmediacheck = in_array($request['social_platform'],Config('app.stream'));
 
                 if(!$socialmediacheck){
@@ -49,12 +50,13 @@ class AnnouncementController extends Controller
                 }
 
                 if($profileId !=null){
-                    if($checkAnnouncement){
+                    if($checkAnnouncement && $request['id']){
                         // update announcement
                         $checkProfile = $this->userService->UpdateAnnouncement($request,$id);
                         $msg=__("api_string.announcement_updated");
                         return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
-        
+                    } elseif(!$checkAnnouncement&&$request['id']) {
+                        return response()->json(["status"=>true,'statusCode'=>202,"message"=>"Announcement does not exist"]);
                     }else{
                         //add  announcement
                         $addAnnouncement = $this->userService->AddAnnouncement($request,$userId,$profileId['id']);
@@ -69,7 +71,7 @@ class AnnouncementController extends Controller
             }else{
                 //Not Author ized
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
             
         } catch (\Throwable $th) {
@@ -83,8 +85,14 @@ class AnnouncementController extends Controller
         return response()->json(["status"=>true,"statusCode"=>200,"announcement"=>$AnnouncementData]);
     }
 
-    public function getAnnouncementList(Request $request){
+    public function getAnnouncementListByKolUserId(Request $request){
         $userId = $request['id'];
+        $announcements = $this->userService->getAnnouncementListByKolUserId($userId);
+        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
+    }
+
+    public function getAnnouncementList(Request $request){
+        $userId = auth()->user()->id;
         $announcements = $this->userService->getAnnouncementList($userId);
         return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
     }
@@ -95,7 +103,7 @@ class AnnouncementController extends Controller
     }
 
     public function deleteAnnouncement(Request $request){
-        $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($request['id']);
+        $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($request['id'],$userId);
         if($checkAnnouncement){
             $announcementData = $this->userService->deleteAnnouncement($request['id']);
             $statusCode= 200;
@@ -122,9 +130,12 @@ class AnnouncementController extends Controller
                 }
 
                 $id = $request['id'];    
-                $status = $request['status'];  
+                $status = $request['status'];
+                if(!$id){
+                    return response()->json(["status"=>true,'statusCode'=>401,"message"=>'Please enter id']);
+                }  
                 $getCurrentStatus = $this->userService->getAnnouncementstatus($id);
-                $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($id);
+                $checkAnnouncement = $this->userService->checkAnnouncementExistOrNot($id,$userId);
                 if($request['status'] == 'active'){
                     $status = 1;
                 }elseif($request['status']=='inactive'){
@@ -147,7 +158,7 @@ class AnnouncementController extends Controller
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
         } catch (\Throwable $th) {
             $msg= __("api_string.error");

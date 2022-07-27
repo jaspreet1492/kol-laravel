@@ -47,7 +47,7 @@ class KolTypeController extends Controller
             }else{
                 //Not Author ized
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
             
         } catch (\Throwable $th) {
@@ -65,23 +65,7 @@ class KolTypeController extends Controller
     }
 
     public function ActiveInactiveKolType(Request $request){
-        // try{
-        //     $checkKolType = $this->userService->checkKolTypeExistOrNot($request['id']);
-        //     if($checkKolType){
-        //         $KolTypeData = $this->userService->ActiveInactiveKolType($request['id']);
-        //         $statusCode= 200;
-        //         $msg=__("api_string.KolType_deleted");
-
-        //     } else{
-        //         $statusCode= 204;
-        //         $msg=__("api_string.KolType_already_deleted");
-        //     }
-        //     return response()->json(["status"=>true,'statusCode'=>$statusCode,"message"=>$msg]);
-
-        // } catch (\Throwable $th) {
-        //     $msg= __("api_string.error");
-        //     return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
-        // }
+        
         try {
             $roleId = auth()->user()->role_id;
             if($roleId == 1){
@@ -121,7 +105,7 @@ class KolTypeController extends Controller
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
         } catch (\Throwable $th) {
             $msg= __("api_string.error");
