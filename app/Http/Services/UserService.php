@@ -5,6 +5,7 @@ namespace  App\Http\Services;
 use App\Models\User;
 use App\Models\UserTokens;
 use App\Models\UserAddress;
+use App\Models\Address;
 use App\Models\KolProfile;
 use App\Models\Chat;
 use App\Models\ChatThread;
@@ -12,9 +13,12 @@ use App\Models\Announcement;
 use App\Models\SocialMedia;
 use App\Models\Feedback;
 use App\Models\Banner;
+use App\Models\Faq;
+use App\Models\InformativeVideo;
 use App\Http\Controllers\MailController;
 use App\Models\KolType;
 use App\Models\Bookmark;
+use App\Models\ContactUs;
 use Illuminate\Support\Facades\Auth;
 use Session;
 use Crypt;
@@ -35,6 +39,7 @@ class UserService
         $allUserData = User::all();
         return $allUserData;
     }
+
     public function saveChat($request, $userId)
     {
         // dd($request['receiver_id']);
@@ -96,6 +101,7 @@ class UserService
         
         
     }
+
     public function getChat($request, $userId)
     {
         
@@ -104,26 +110,28 @@ class UserService
     ->whereIn('receiver_id',[$userId,$request['receiver_id']])
     ->with('getReceiver','kolProfile')
     ->orderBy('id', 'ASC')->get();
-    // $data =[];
-    // dd($chatData);
-    
-    foreach($chatData as $chatDatas){
-        $obj = [];
-            // $obj['userData'] = $chatDatas->getUser;
-            $obj['name']=$chatDatas->getSender->name;
-            $obj['last_name']=$chatDatas->getSender->last_name;
-            // $obj['userData']['role_id']=$chatDatas->getReceiver->role_id;
-            $obj['avatar']=(isset($chatDatas->kolProfile->avatar)&& $chatDatas->kolProfile->avatar!=NULL)?$chatDatas->kolProfile->avatar:$chatDatas->getReceiver->avatar;
-            // $obj['userData']['email']=$chatDatas->getReceiver->email;
-            $obj['message_id'] = $chatDatas->id;
-            $obj['sender_id'] = $chatDatas->sender_id;
-            $obj['receiver_id'] = $chatDatas->receiver_id;
-            $obj['message'] = $chatDatas->message;
-            $obj['sent_at'] = $chatDatas->created_at;
-            $obj['edit_at'] = $chatDatas->updated_at;
-        
-        $data[] = $obj;
+    $data =[];
+    if(!empty($chatData)){
+        foreach($chatData as $chatDatas){
+            $obj = [];
+                // $obj['userData'] = $chatDatas->getUser;
+                $obj['name']=$chatDatas->getSender->name;
+                $obj['last_name']=$chatDatas->getSender->last_name;
+                // $obj['userData']['role_id']=$chatDatas->getReceiver->role_id;
+                $obj['avatar']=$chatDatas->getSender->avatar;
+                // $obj['avatar']=(isset($chatDatas->kolProfile->avatar)&& $chatDatas->kolProfile->avatar!=NULL)?$chatDatas->kolProfile->avatar:$chatDatas->getSender->avatar;
+                // $obj['userData']['email']=$chatDatas->getReceiver->email;
+                $obj['message_id'] = $chatDatas->id;
+                $obj['sender_id'] = $chatDatas->sender_id;
+                $obj['receiver_id'] = $chatDatas->receiver_id;
+                $obj['message'] = $chatDatas->message;
+                $obj['sent_at'] = $chatDatas->created_at;
+                $obj['edit_at'] = $chatDatas->updated_at;
+            
+            $data[] = $obj;
+        }
     }
+   
     return $data;
     }
 
@@ -166,6 +174,7 @@ class UserService
         $result = KolProfile::where(['id'=> $request['profile_id']])->update(['total_viewer' => $views+1]);
         return $result;
     }
+
     public function editMsg($request, $userId)
     {
         $result = ChatThread::where(['id'=> $request['msg_id'],'sender_id'=>$userId])->update(['message' => $request['message']]);
@@ -302,7 +311,7 @@ class UserService
 
     public function getUserById($userId)
     {
-        return User::where('id', $userId)->first();
+        return User::where('id', $userId)->with('getAddress')->first();
     }
 
     public function userLogin($request, $oldOtp, $userId)
@@ -421,8 +430,7 @@ class UserService
 
         if ($lastProfileId) {
             foreach ($request['social_media'] as $requestMediaData) {
-                $newArr =  json_decode($requestMediaData, true);
-                $requestMediaData = $newArr[0];
+    
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $lastProfileId;
@@ -497,7 +505,7 @@ class UserService
     }
 
     // Add Banner
-public function AddBanner($request,$endUserId)
+    public function AddBanner($request,$endUserId)
     {
         $BannerData = new Banner();
         $BannerData->user_id = $endUserId;
@@ -508,6 +516,48 @@ public function AddBanner($request,$endUserId)
         $lastBannerId = $BannerData->id;
 
         return $lastBannerId;
+    }
+
+    // Add Faq
+    public function AddFaq($request)
+    {
+        $FaqData = new Faq();
+        $FaqData->question = $request['question'];
+        $FaqData->answer = $request['answer'];
+        $FaqDataSaved = $FaqData->save();
+        $lastFaqId = $FaqData->id;
+
+        return $lastFaqId;
+    }
+
+    // Add Information
+    public function AddInformativeVideo($request)
+    {
+        $InformativeVideoData = new InformativeVideo();
+        $InformativeVideoData->title = $request['title'];
+        $InformativeVideoData->description = $request['description'];
+        $InformativeVideoData->banner = InformativeVideo::makeImageUrl($request['banner']);
+        $InformativeVideoSaved = $InformativeVideoData->save();
+        $lastIvId = $InformativeVideoData->id;
+
+        return $lastIvId;
+    }
+
+    // Add User Address
+    public function AddAddress($request,$userId)
+    {
+        $AddressData = new Address();
+        $AddressData->user_id = $userId;
+        $AddressData->address = $request['address'];
+        $AddressData->landmark = $request['landmark'];
+        $AddressData->city = $request['city'];
+        $AddressData->state = $request['state'];
+        $AddressData->zip = $request['zip'];
+        $AddressData->country = $request['country'];
+        $AddressSaved = $AddressData->save();
+        $lastAddressId = $AddressData->id;
+
+        return $lastAddressId;
     }
 
     // View KolType
@@ -535,6 +585,39 @@ public function AddBanner($request,$endUserId)
         $response = array_combine($keys,$values);
         
         return $response;
+    }
+
+    // get TotalUsers
+    public function getTotalUsers()
+    {
+        $response = User::where('status', 1)->where('role_id',3)->count();
+        
+        return $response;
+    }
+
+    // get TotalUsers
+    public function getTotalkol()
+    {
+        $response = User::where('status', 1)->where('role_id',2)->count();
+        
+        return $response;
+    }
+
+    // get TotalUsers
+    public function getTotalVideos()
+    {
+        $profileDetails = kolProfile::where('status', 1)->whereHas('getUser', function($query) {
+            $query->where('role_id', '=', 2); // '=' is optional
+        })->get();
+        $response= [];
+        foreach($profileDetails as $kolProfile){
+            $video_links = explode(',', $kolProfile['video_links']);
+            $count = count($video_links);
+            array_push($response,$count);
+        }
+        $total_sum = array_sum($response);
+
+        return $total_sum;
     }
 
     // get Kol Users Feedback
@@ -578,6 +661,23 @@ public function AddBanner($request,$endUserId)
         }
         
         return $listFeedbacks;
+    }
+
+    public function contactUs($request)
+    {
+        $contactUsData = new ContactUs();
+        $contactUsData->first_name = $request['first_name'];
+        $contactUsData->last_name = $request['last_name'];
+        $contactUsData->email = $request['email'];
+        $contactUsData->mobile = $request['mobile'];
+        $contactUsData->messsage = $request['messsage'];
+        $contactUsDataSaved = $contactUsData->save();
+        $lastContactId = $contactUsData->id;
+       
+        $Email = Mail::to("jaspreetkaur@bootesnull.com")->send(new \App\Mail\VerifyMail(["url" => $contactUsData->messsage]));
+        
+        return $lastContactId;
+
     }
 
     // get End Users Feedback
@@ -656,6 +756,22 @@ public function AddBanner($request,$endUserId)
         return $updateResponse;
     }
 
+    // Update UserImage
+    public function storeUserImage($request, $userId)
+    {
+
+        $UserImg = ($request['avatar']) ? User::makeImageUrl($request['avatar']) : NULL;
+        $updateData = [];
+
+        $updateData = [
+            'avatar' => $UserImg,
+        ];
+
+        $updateResponse = User::where('id', $userId)->update($updateData);
+        
+        return $updateResponse;
+    }
+
     // Update Banner
     public function UpdateBanner($request, $id)
     {
@@ -683,6 +799,87 @@ public function AddBanner($request,$endUserId)
         return $updateResponse;
     }
 
+
+    // Update Faq
+    public function UpdateFaq($request, $id)
+    {
+        $id = ($request['id']) ? $request['id'] : NULL;
+        $updateData = [];
+            
+        $updateData = [
+            'question' => $request['question'],
+            'answer' => $request['answer'],
+        ];
+  
+        $updateResponse = Faq::where('id', $id)->update($updateData);
+
+        return $updateResponse;
+    }
+
+    // Update UserDetails
+    public function UpdateUserDetails($request, $userId)
+    {
+        $updateData = [];
+            
+        $updateData = [
+            'name' => $request['name'],
+            'last_name' => $request['last_name'],
+            'gender' => $request['gender'],
+            'phone' => $request['phone']
+        ];
+  
+        $updateResponse = User::where('id', $userId)->update($updateData);
+
+        return $updateResponse;
+    }
+
+    // Update Address
+    public function UpdateAddress($request, $userId)
+    {
+        $updateData = [];
+            
+        $updateData = [
+            'address' => $request['address'],
+            'landmark' => $request['landmark'],
+            'city' => $request['city'],
+            'state' => $request['state'],
+            'zip' => $request['zip'],
+            'country' => $request['country']
+        ];
+  
+        $updateResponse = Address::where('user_id', $userId)->update($updateData);
+
+        return $updateResponse;
+    }
+
+
+    // Update InformativeVideo
+    public function UpdateInformativeVideo($request, $id)
+    {
+        $id = ($request['id']) ? $request['id'] : NULL;
+        $Banner = ($request['image']) ? InformativeVideo::makeImageUrl($request['image']) : NULL;
+        $updateData = [];
+
+        if ($Banner) {
+            
+            $updateData = [
+                'title' => $request['title'],
+                'description' => $request['description'],
+                'banner' => $Banner,
+            ];
+
+        } else {
+            $updateData = [
+                'title' => $request['title'],
+                'description' => $request['description'],
+            ];
+        }
+
+        $updateResponse = InformativeVideo::where('id', $id)->update($updateData);
+
+        return $updateResponse;
+    }
+
     public function ViewAnnouncementById($id)
     {
         $announcementData = Announcement::where('announcements.id', $id)->with('getUser')->get();
@@ -702,6 +899,13 @@ public function AddBanner($request,$endUserId)
         return $KolTypeData['status'];
     }
 
+    public function getAnnouncementListByKolUserId($userId){
+
+        $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->get();
+
+        return $AnnouncementList;
+    }
+
     public function getAnnouncementList($userId){
 
         $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->get();
@@ -714,6 +918,20 @@ public function AddBanner($request,$endUserId)
         $BannerList = Banner::where('status',1)->get();
 
         return $BannerList;
+    }
+
+    public function getFaqList(){
+
+        $FaqList = Faq::where('status',1)->get();
+
+        return $FaqList;
+    }
+
+    public function getInformativeVideoList(){
+
+        $InformativeVideoList = InformativeVideo::get();
+
+        return $InformativeVideoList;
     }
 
     public function getBookmarks($userId){
@@ -767,11 +985,26 @@ public function AddBanner($request,$endUserId)
 
         return $Announcement;
     }
+
     public function deleteBanner($id){
 
         $Banner = Banner::where('id',$id)->delete();
-
+        
         return $Banner;
+    }
+
+    public function deleteFaq($id){
+
+        $Faq = Faq::where('id',$id)->delete();
+        
+        return $Faq;
+    }
+    
+    public function deleteInformativeVideo($id){
+
+        $InformativeVideo = InformativeVideo::where('id',$id)->delete();
+
+        return $InformativeVideo;
     }
     
     public function deleteBookmark($kol_profile_id,$endUserId){
@@ -878,8 +1111,7 @@ public function AddBanner($request,$endUserId)
                 $socialAccounts = SocialMedia::where('user_id', $userId)->delete();
             }
             foreach ($request['social_media'] as $requestMediaData) {                
-                $newArr =  json_decode($requestMediaData, true);
-                $requestMediaData = $newArr[0];
+                
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $profile_id[0];
@@ -912,8 +1144,9 @@ public function AddBanner($request,$endUserId)
     public function checkKolProfileExistOrNot($userId)
     {
 
-        return KolProfile::where('user_id', $userId)->first();
+        return KolProfile::where('user_id', $userId)->with('getUser')->with('getSocialMedia')->first();
     }
+
     public function checkKolProfileIdExistOrNot($profileId)
     {
 
@@ -926,14 +1159,29 @@ public function AddBanner($request,$endUserId)
         return KolType::where('id', $id)->first();
     }
 
-    public function checkAnnouncementExistOrNot($Id)
+    public function checkAnnouncementExistOrNot($Id,$userId)
     {
-        return Announcement::where('id', $Id)->first();
+        return Announcement::where('id', $Id)->where('user_id',$userId)->first();
+    }
+
+    public function checkAddressExistOrNot($userId)
+    {
+        return Address::where('user_id',$userId)->first();
     }
 
     public function checkBannerExistOrNot($Id)
     {
         return Banner::where('id', $Id)->first();
+    }
+
+    public function checkFaqExistOrNot($Id)
+    {
+        return Faq::where('id', $Id)->first();
+    }
+
+    public function checkInformativeVideoExistOrNot($Id)
+    {
+        return InformativeVideo::where('id', $Id)->first();
     }
 
     public function checkBookmarkExistOrNot($endUserId,$kol_profile_id)
@@ -950,8 +1198,11 @@ public function AddBanner($request,$endUserId)
     {
         $profileData = KolProfile::where('kol_profiles.id', $id)->with('getUser')->with('getSocialMedia')->get();
         $latestAnnouncement = Announcement::where('profile_id',$id)->where('status',1)->orderBy('id','Desc')->first();
-        
-        
+
+        if($profileData->isEmpty()){
+            return false;
+        }
+
         $kolProfileData = $profileData;
         $kolProfileData[0]['announcement'] = $latestAnnouncement;
 
@@ -988,13 +1239,16 @@ public function AddBanner($request,$endUserId)
             }
             // if($sortBY && $socialMedia){
             //     $query->whereIn('id', [$sortBYQuery][0]);            
-            // }
+            // }         
+            
             if(isset($request['stream']) && !empty($request['stream'])){
                 $query->whereRaw('Find_IN_SET(?, social_active)', [$request['stream']]);
             }
             if(isset($request['kol_type']) && $request['kol_type']!=''){
                 $query->where('kol_type', [$request['kol_type']]);
             }
+        })->whereHas('getUser', function($query) use($request) {
+            $query->where('role_id', '=', 2); // '=' is optional
         })->skip(($pageNo - 1) * $limit)->take($limit)->get();
         $listProfiles = [];
         $listSocialMedia = [];

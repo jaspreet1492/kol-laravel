@@ -15,22 +15,22 @@ use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\BookmarkController;
 use App\Http\Controllers\API\FeedbackController;
 use App\Http\Controllers\API\BannerController;
+use App\Http\Controllers\API\InformativeVideoController;
+use App\Http\Controllers\API\DashboardController;
 
 
 Route::middleware(['api'])->group(function () {
 
-    Route::post('register',[AuthController::Class,'registration']);
-    Route::post('verify-OTP',[AuthController::Class,'verifyOTP']);
-    Route::post('resend-OTP',[AuthController::Class,'resendOTP']);
+    Route::post('register',[AuthController::class,'registration']);
+    Route::post('verify-OTP',[AuthController::class,'verifyOTP']);
+    Route::post('resend-OTP',[AuthController::class,'resendOTP']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('login-with-google', [AuthController::class, 'loginWithGoogle']);
     Route::put('update-role', [AuthController::class, 'updateRole']);
-    //reset password if user forgot his password
-    Route::patch('check-email-forgot-password',[AuthController::Class,'checkEmailForgotPassword']);
-    Route::put('forgot-password',[AuthController::Class,'forgotPassword']);
-    Route::get('varifyResetpassword',[ResetPasswordController::Class,'varifyResetpassword'])->name('varifyResetpassword');
-    Route::post('changePassword',[ResetPasswordController::Class,'changePassword'])->name('changePassword');
-    //ask for otp if first time otp not get 
+    Route::patch('check-email-forgot-password',[AuthController::class,'checkEmailForgotPassword']);
+    Route::put('forgot-password',[AuthController::class,'forgotPassword']);
+    Route::get('varifyResetpassword',[ResetPasswordController::class,'varifyResetpassword'])->name('varifyResetpassword');
+    Route::post('changePassword',[ResetPasswordController::class,'changePassword'])->name('changePassword');
     Route::post('resend-verification-email', [AuthController::class, 'sendVerificationEmail']);
     Route::post('logout', [AuthController::class, 'logout']);
 
@@ -42,58 +42,62 @@ Route::middleware(['api'])->group(function () {
   Route::group(['middleware' => ['jwt.verify']], function() {
     
     Route::put('reset-password', [AuthController::class, 'resetPassword']);
-    Route::post('kol-profile/add-update',[KolProfileController::Class,'AddOrUpdateKolProfile']);
-    Route::get('kol-profile/view',[KolProfileController::Class,'getKolProfileById']);
-    Route::get('kol-profile/list',[KolProfileController::Class,'getProfileList']);
-    Route::get('kol-profile/featured-list',[KolProfileController::Class,'getFeaturedProfileList']);
-    Route::put('kol-profile/add-view-count',[KolProfileController::Class,'saveProfileView']);
-    Route::put('kol-profile/is_featured',[KolProfileController::Class,'FeatureKolProfile']);
-    Route::post('announcement/add-update',[AnnouncementController::Class,'AddorUpdateAnnouncement']);
-    Route::post('bookmark/add',[BookmarkController::Class,'AddBookmark']);
-    Route::post('feedback/add',[FeedbackController::Class,'AddFeedback']);
-    Route::delete('bookmark/delete',[BookmarkController::Class,'deleteBookmark']);
-    Route::get('bookmark/list',[BookmarkController::Class,'getBookmarks']);
-    Route::get('feedback/end-user-list',[FeedbackController::Class,'getEndUserFeedbackList']);
-    Route::get('feedback/kol-user-list',[FeedbackController::Class,'getKolFeedbackList']);
-    Route::post('kol-type/add-update',[KolTypeController::Class,'AddorUpdateKolType']);
-    Route::get('kol-type/list',[KolTypeController::Class,'getKolTypeList']);
-    Route::post('kol-type/active-inactive',[KolTypeController::Class,'ActiveInactiveKolType']);
-    Route::get('announcement/view',[AnnouncementController::Class,'getAnnouncementById']);
-    Route::get('announcement/list',[AnnouncementController::Class,'getAnnouncementList']);
-    Route::get('announcement/all-list',[AnnouncementController::Class,'getAllAnnouncementList']);
-    Route::delete('announcement/delete',[AnnouncementController::Class,'deleteAnnouncement']);
-    Route::post('announcement/active-inactive-status',[AnnouncementController::Class,'AnnouncementActiveInactive']);
-    Route::post('Chat/send-message',[ChatController::Class,'sendMessage']);
-    Route::get('Chat/chat-list-users',[ChatController::Class,'getChatDataUsers']);
-    Route::get('Chat/chat-list',[ChatController::Class,'getChatData']);
-    Route::get('Chat/delete-msg',[ChatController::Class,'deleteChat']);
-    Route::put('Chat/edit-msg',[ChatController::Class,'editChat']);
+    Route::post('user/add-user-address', [UserController::class, 'addUserAddress']);
+    Route::post('store-user-image',[UserController::class,'storeUserImage']);
+    Route::post('kol-profile/add-update',[KolProfileController::class,'AddOrUpdateKolProfile']);
+    Route::get('kol-profile/view',[KolProfileController::class,'getKolProfileById']);
+    Route::get('kol-profile/view-details',[KolProfileController::class,'getKolProfile']);
+    Route::get('kol-profile/list',[KolProfileController::class,'getProfileList']);
+    Route::get('kol-profile/featured-list',[KolProfileController::class,'getFeaturedProfileList']);
+    Route::put('kol-profile/add-view-count',[KolProfileController::class,'saveProfileView']);
+    Route::post('announcement/add-update',[AnnouncementController::class,'AddorUpdateAnnouncement']);
+    Route::post('bookmark/add',[BookmarkController::class,'AddBookmark']);
+    Route::post('feedback/add',[FeedbackController::class,'AddFeedback']);
+    Route::delete('bookmark/delete',[BookmarkController::class,'deleteBookmark']);
+    Route::get('bookmark/list',[BookmarkController::class,'getBookmarks']);
+    Route::get('feedback/end-user-list',[FeedbackController::class,'getEndUserFeedbackList']);
+    Route::get('feedback/kol-user-list',[FeedbackController::class,'getKolFeedbackList']);
+    Route::get('kol-type/list',[KolTypeController::class,'getKolTypeList']);
+    Route::get('announcement/view',[AnnouncementController::class,'getAnnouncementById']);
+    Route::get('announcement/kol-user-id-list',[AnnouncementController::class,'getAnnouncementListByKolUserId']);
+    Route::get('announcement/list',[AnnouncementController::class,'getAnnouncementList']);
+    Route::get('announcement/all-list',[AnnouncementController::class,'getAllAnnouncementList']);
+    Route::delete('announcement/delete',[AnnouncementController::class,'deleteAnnouncement']);
+    Route::post('announcement/active-inactive-status',[AnnouncementController::class,'AnnouncementActiveInactive']);
+    Route::post('Chat/send-message',[ChatController::class,'sendMessage']);
+    Route::get('Chat/chat-list-users',[ChatController::class,'getChatDataUsers']);
+    Route::get('Chat/chat-list',[ChatController::class,'getChatData']);
+    Route::get('Chat/delete-msg',[ChatController::class,'deleteChat']);
+    Route::put('Chat/edit-msg',[ChatController::class,'editChat']);
+    Route::get('dashboard/get-total-count',[DashboardController::class,'getTotalCount']);
+    Route::post('dashboard/contactUs',[DashboardController::class,'contactUs']);
+    Route::get('view-all-user',[UserController::class,'displayAllUser']);
+    Route::get('view-user-details', [UserController::class, 'getUserDetailsByID']);
+    Route::post('update-user-data', [UserController::class, 'updateUserDetails']);
+    Route::post('add-user-address', [UserController::class, 'storeUserAddress']);
     
   });
   
   
   Route::group(['middleware' => 'isAdmin'], function () {
-
-    Route::get('view-all-user',[UserController::Class,'displayAllUser']);
-    Route::get('view-user-details', [UserController::class, 'getUserDetailsByID']);
-    Route::post('update-user-data', [UserController::class, 'updateUserDetails']);
-    Route::get('get-user-address', [UserController::class, 'addUserAddress']);
-    Route::post('add-user-address', [UserController::class, 'storeUserAddress']);
-    Route::get('category/list',[CategoryController::Class,'getCategory']);
-    Route::post('category/store',[CategoryController::Class,'store']);
-    Route::get('category/view',[CategoryController::Class,'viewCategory']);
-    Route::post('category/edit',[CategoryController::Class,'editCategory']);
-    Route::put('category/edit/status',[CategoryController::Class,'ChangeCategoryStatus']);
-    Route::post('updateCategory',[CategoryController::Class,'makeUpdation']);
-    Route::post('banner/add-banner',[BannerController::Class,'AddBanner']);
-    Route::get('banner/list',[BannerController::Class,'getBannerList']);
-    Route::delete('banner/delete',[BannerController::Class,'deleteBanner']);
-
+  
+    Route::post('dashboard/add-update-banner',[DashboardController::class,'AddBanner']);
+    Route::post('dashboard/add-update-faq',[DashboardController::class,'AddUpdateFaq']);
+    Route::get('dashboard/banner-list',[DashboardController::class,'getBannerList']);
+    Route::get('dashboard/faq-list',[DashboardController::class,'getFaqList']);
+    Route::delete('dashboard/banner-delete',[DashboardController::class,'deleteBanner']);
+    Route::post('dashboard/add-update-information',[DashboardController::class,'AddUpdateInformativeVideo']);
+    Route::get('dashboard/information-list',[DashboardController::class,'getInformativeVideoList']);
+    Route::delete('dashboard/delete-information',[DashboardController::class,'deleteInformativeVideo']);
+    Route::delete('dashboard/delete-faq',[DashboardController::class,'deleteFaq']);
+    Route::put('kol-profile/is_featured',[KolProfileController::class,'FeatureKolProfile']);
+    Route::post('kol-type/add-update',[KolTypeController::class,'AddorUpdateKolType']);
+    Route::post('kol-type/active-inactive',[KolTypeController::class,'ActiveInactiveKolType']);
   }); 
 
-  Route::get('language-list',[KolTypeController::Class,'getLanguage']);
-  Route::get('state-list',[KolTypeController::Class,'getState']);
-  Route::get('stream-list',[KolTypeController::Class,'getStream']);
+  Route::get('language-list',[KolTypeController::class,'getLanguage']);
+  Route::get('state-list',[KolTypeController::class,'getState']);
+  Route::get('stream-list',[KolTypeController::class,'getStream']);
 
 
  

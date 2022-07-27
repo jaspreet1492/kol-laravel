@@ -16,6 +16,12 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        return $next($request);
+        $roleId = Auth::user()->role_id;
+        if($roleId == 1){
+            return $next($request);
+        } else {
+            $msg=__("api_string.not_authorized");
+            return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+        }
     }
 }

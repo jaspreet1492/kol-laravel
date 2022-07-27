@@ -52,9 +52,13 @@ class KolProfileController extends Controller
     }
 
     public function AddOrUpdateKolProfile(Request $request){
-    
+        
         try {
             $roleId = auth()->user()->role_id;
+            if(!is_array($request['social_media'][0])){
+                $newSocialMedia = json_decode($request['social_media'][0], true);            
+                $request->merge(array('social_media'=>$newSocialMedia));
+            }
             if($roleId == 2){
                 $valdiation = Validator::make($request->all(),[
                     'languages.*' => 'required', 
@@ -63,8 +67,8 @@ class KolProfileController extends Controller
                     'zip_code' => 'required', 
                     'city' => 'required|alpha', 
                     'bio' => 'required',
-                    'avatar' => 'required',
-                    'banner' => 'required',
+                    'avatar' => 'nullable|mimes:png,jpeg,jpg',
+                    'banner' => 'nullable|mimes:png,jpeg,jpg',
                     'video_links.*'=>'required|url',
                     'tags.*' => 'required',
                     'personal_email' => 'nullable|email',
@@ -127,7 +131,7 @@ class KolProfileController extends Controller
                 }
             }else{
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
             
         } catch (\Throwable $th) {
@@ -162,7 +166,7 @@ class KolProfileController extends Controller
   
             }else{
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
             
         } catch (\Throwable $th) {
@@ -182,6 +186,24 @@ class KolProfileController extends Controller
             $kolProfileData[0]['Bookmark'] = 'true';
         }
         return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=> $kolProfileData]);
+    }
+
+    public function getKolProfile(Request $request){
+        
+        $endUserId = auth()->user()->id;
+        $kolProfileData = $this->userService->checkKolProfileExistOrNot($endUserId);
+        if($kolProfileData){
+            $checkBookmark = $this->userService->checkBookmarkExistOrNot($endUserId,$kolProfileData['id']);
+            
+            if(empty($checkBookmark)){
+                $kolProfileData['Bookmark']= 'false';
+            }else {
+                $kolProfileData['Bookmark'] = 'true';
+            }
+            return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=> $kolProfileData]);
+        } else{
+            return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=> "Please add profile details first."]);
+        }
     }
 
     public function getProfileList(Request $request){

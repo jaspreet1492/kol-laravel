@@ -37,10 +37,27 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+
+    public static function makeImageUrl($file)
+    {
+        
+        $uploadFolder = 'user';
+        $name = preg_replace("/[^a-z0-9\._]+/", "-", strtolower(time() . rand(1, 9999) . '.' . $file->getClientOriginalName()));
+        if ($file->move(public_path() . '/uploads/'.$uploadFolder, str_replace(" ", "", $name))) {
+            return '/uploads/'.$uploadFolder.'/' .$name;
+        }
+    }
+
     public function getJWTIdentifier() {
         return $this->getKey();
     }
     public function getJWTCustomClaims() {
         return [];
     } 
+
+    public function getAddress(){
+        return $this->hasOne(Address::class,'user_id','id');
+    
+    }
 }
