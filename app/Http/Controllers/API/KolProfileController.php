@@ -212,7 +212,9 @@ class KolProfileController extends Controller
 
     public function getProfileList(Request $request){
         $kolProfiles = $this->userService->KolProfileList($request);
-        return response()->json(["status"=>true,"statusCode"=>200,"kolProfiles"=>$kolProfiles]);
+        
+
+        return response()->json(["status"=>true,"statusCode"=>200,"kolTotalProfiles"=>$kolProfiles['total'],"kolProfiles"=>$kolProfiles['data']]);
     }
 
     public function getFeaturedProfileList(Request $request){

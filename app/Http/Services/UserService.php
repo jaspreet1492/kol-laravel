@@ -899,16 +899,22 @@ class UserService
         return $KolTypeData['status'];
     }
 
-    public function getAnnouncementListByKolUserId($userId){
+    public function getAnnouncementListByKolUserId($request, $userId){
 
-        $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->get();
+        $pageNo = ($request['page']) ? $request['page'] : 1;
+        $limit = ($request['limit']) ? $request['limit'] : 10;
+
+        $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->get();
 
         return $AnnouncementList;
     }
 
-    public function getAnnouncementList($userId){
+    public function getAnnouncementList($request,$userId){
+        
+        $pageNo = ($request['page']) ? $request['page'] : 1;
+        $limit = ($request['limit']) ? $request['limit'] : 10;
 
-        $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->get();
+        $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->get();
 
         return $AnnouncementList;
     }
@@ -972,9 +978,12 @@ class UserService
         return $listBookMarks;
     }
 
-    public function getAllAnnouncementList(){
+    public function getAllAnnouncementList($request){
 
-        $AnnouncementList = Announcement::where('status',1)->with('getUser')->get();
+        $pageNo = ($request['page']) ? $request['page'] : 1;
+        $limit = ($request['limit']) ? $request['limit'] : 10;
+
+        $AnnouncementList = Announcement::where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->get();
 
         return $AnnouncementList;
     }
@@ -1236,11 +1245,7 @@ class UserService
             }
             if(isset($request['state']) && $request['state']!= ''){
                 $query->where('state', [$request['state']]);
-            }
-            // if($sortBY && $socialMedia){
-            //     $query->whereIn('id', [$sortBYQuery][0]);            
-            // }         
-            
+            }            
             if(isset($request['stream']) && !empty($request['stream'])){
                 $query->whereRaw('Find_IN_SET(?, social_active)', [$request['stream']]);
             }
@@ -1250,6 +1255,28 @@ class UserService
         })->whereHas('getUser', function($query) use($request) {
             $query->where('role_id', '=', 2); // '=' is optional
         })->skip(($pageNo - 1) * $limit)->take($limit)->get();
+
+        $kolProfilesCount = KolProfile::with('getUser','getSocialMedia', 'getBookmark')
+        ->where(function($query) use ($request,$UserIdByQuery){
+            if(isset($request['languages']) && !empty($request['languages'])){
+                $query->whereRaw('Find_IN_SET(?, languages)', [$request['languages']]);
+            }
+            if(isset($request['search']) && $request['search']!= ''){
+                $query->whereIn('user_id', [$UserIdByQuery][0]);
+            }
+            if(isset($request['state']) && $request['state']!= ''){
+                $query->where('state', [$request['state']]);
+            }            
+            if(isset($request['stream']) && !empty($request['stream'])){
+                $query->whereRaw('Find_IN_SET(?, social_active)', [$request['stream']]);
+            }
+            if(isset($request['kol_type']) && $request['kol_type']!=''){
+                $query->where('kol_type', [$request['kol_type']]);
+            }
+        })->whereHas('getUser', function($query) use($request) {
+            $query->where('role_id', '=', 2); // '=' is optional
+        })->count();
+        
         $listProfiles = [];
         $listSocialMedia = [];
         $i = 0;
@@ -1292,8 +1319,13 @@ class UserService
 
             $i++;
         }
-        
-        return $listProfiles;
+
+        $finalArray = array();
+
+        $finalArray['total'] = $kolProfilesCount;
+        $finalArray['data'] = $listProfiles;
+
+        return $finalArray;
     }
     
     public function getFeaturedProfileList($request){

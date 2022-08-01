@@ -87,18 +87,18 @@ class AnnouncementController extends Controller
 
     public function getAnnouncementListByKolUserId(Request $request){
         $userId = $request['id'];
-        $announcements = $this->userService->getAnnouncementListByKolUserId($userId);
+        $announcements = $this->userService->getAnnouncementListByKolUserId($request,$userId);
         return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
     }
 
     public function getAnnouncementList(Request $request){
         $userId = auth()->user()->id;
-        $announcements = $this->userService->getAnnouncementList($userId);
+        $announcements = $this->userService->getAnnouncementList($request,$userId);
         return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
     }
 
     public function getAllAnnouncementList(Request $request){
-        $announcements = $this->userService->getAllAnnouncementList();
+        $announcements = $this->userService->getAllAnnouncementList($request);
         return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
     }
 
