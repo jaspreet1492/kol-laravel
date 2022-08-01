@@ -19,7 +19,7 @@ class FeedbackController extends Controller
     }
 
     public function AddFeedback(Request $request){
-
+        
         try {
             $roleId = auth()->user()->role_id;
             $endUserId = auth()->user()->id;
@@ -27,16 +27,20 @@ class FeedbackController extends Controller
                 
                 $valdiation = Validator::make($request->all(),[
                     'kol_profile_id' => 'required',
-                    'rating' => 'nullable',
+                    'rating' => 'nullable|numeric',
                     'comment' => 'required'
                 ]);
                 if($valdiation->fails()) {
                     $msg = __("api_string.invalid_fields");
                     return response()->json(["message"=>$msg, "statusCode"=>422]);
                 }
-                
                 $kol_profile_id = $request['kol_profile_id'];    
                 $checkKolUser = $this->userService->ViewKolProfileById($kol_profile_id);
+                
+                if(!$checkKolUser){
+                    return response()->json(["status"=>true,'statusCode'=>401,"message"=>"Invalid Kol id"]);
+                }
+
                 $kol_user_id = $checkKolUser[0]['user_id'];
 
                 if($request['rating']>5){
@@ -51,7 +55,7 @@ class FeedbackController extends Controller
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
             
         } catch (\Throwable $th) {
@@ -70,7 +74,7 @@ class FeedbackController extends Controller
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
 
         } catch (\Throwable $th) {
@@ -79,19 +83,12 @@ class FeedbackController extends Controller
         }
     }
 
-    public function getKolFeedbackList(){
+    public function getKolFeedbackList(Request $request){
         try {
-            $roleId = auth()->user()->role_id;
-            $kolUserId = auth()->user()->id;
-            if($roleId == 2){
-                $FeedbackList = $this->userService->getKolFeedbackList($kolUserId);
-                return response()->json(["status"=>true,"statusCode"=>200,"Feedbacks"=>$FeedbackList]);
-            }else{
-                //Not Authorized
-                $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>true,'statusCode'=>401,"message"=>$msg]);
-            }
-
+            $kolProfileId = $request['kol_profile_id'];
+            $FeedbackList = $this->userService->getKolFeedbackList($kolProfileId);
+            return response()->json(["status"=>true,"statusCode"=>200,"Feedbacks"=>$FeedbackList]);
+            
         } catch (\Throwable $th) {
             $msg= __("api_string.error");
             return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);

@@ -14,10 +14,10 @@ class Bookmark extends Model
     protected $fillable = ['id', 'end_user_id', 'kol_user_id', 'kol_profile_id', 'updated_at'];
 
     public function getKolProfile(){
-        return $this->hasMany(KolProfile::class,'id','kol_profile_id');
+        return $this->belongsTo(KolProfile::class,'kol_profile_id','id');
     }
 
     public function getUser(){
-        return $this->hasMany(User::class,'id','kol_user_id');
+        return $this->belongsTo(User::class,'kol_user_id','id');
     }
 }

@@ -20,12 +20,16 @@ class KolProfile extends Model
         $uploadFolder = 'profile';
         $name = preg_replace("/[^a-z0-9\._]+/", "-", strtolower(time() . rand(1, 9999) . '.' . $file->getClientOriginalName()));
         if ($file->move(public_path() . '/uploads/'.$uploadFolder, str_replace(" ", "", $name))) {
-            return url('/') . '/uploads/'.$uploadFolder.'/' .$name;
+            return '/uploads/'.$uploadFolder.'/' .$name;
         }
     }
 
     public function getSocialMedia(){
         return $this->hasMany(SocialMedia::class,'profile_id','id');
+    }
+
+    public function getBookmark(){
+        return $this->hasOne(Bookmark::class,'kol_profile_id','id');
     }
 
     public function getAnnouncements(){
@@ -34,6 +38,11 @@ class KolProfile extends Model
 
     public function getUser(){
         return $this->hasOne(User::class,'id','user_id');
+    
+    }
+
+    public function getFeedbacks(){
+        return $this->hasMany(Feedback::class,'kol_profile_id','id');
     
     }
 

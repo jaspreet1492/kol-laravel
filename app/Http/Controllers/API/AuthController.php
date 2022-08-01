@@ -61,51 +61,57 @@ class AuthController extends Controller
                  $msg = __("api_string.invalid_fields");
                  return response()->json(["message"=>$msg, "statusCode"=>422]);
              }
-             if($request['firebase_token']){
-                $checkEmail = $this->userService->checkEmail($request['email']);
-                if($checkEmail){
-                        $token = $this->userService->generateJwtToken($checkEmail);
-                        if($token){
+            $roles=Config::get('app.roles');
+            unset($roles[0]);
+            if(in_array($request['role_id'],$roles)){
+                if($request['firebase_token']){
+                    $checkEmail = $this->userService->checkEmail($request['email']);
+                    if($checkEmail){
+                            $token = $this->userService->generateJwtToken($checkEmail);
+                            if($token){
+                                $response = [];
+                                $response['token'] = $token;
+                                $response['user_name'] = $checkEmail['name'];
+                                $response['email'] = $checkEmail['email'];
+                                $response['role_id'] = $checkEmail['role_id'];
+                                $msg =  __("api_string.user_register_by_firebase");
+                                return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);     
+                            }else{
+                                $msg = __("api_string.error");
+                                return response()->json(["status"=>false, "statusCode"=>500,"message"=>$msg]);                
+                            }
+                    }else{
+                        //create users
+                        $saveResponse = $this->userService->createUser($request,$otp=null,$request['role_id']);
+                        if($saveResponse){
                             $response = [];
-                            $response['token'] = $token;
-                            $response['user_name'] = $checkEmail['name'];
-                            $response['email'] = $checkEmail['email'];
-                            $response['role_id'] = $checkEmail['role_id'];
+                            $response['token'] = $saveResponse;
+                            $response['user_name'] = $request['name'];
+                            $response['email'] = $request['email'];
+                            $response['role_id'] = $request['role_id'];
                             $msg =  __("api_string.user_register_by_firebase");
-                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);     
-                        }else{
-                            $msg = __("api_string.error");
-                            return response()->json(["status"=>false, "statusCode"=>500,"message"=>$msg]);                
+                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]); 
                         }
+                    }
                 }else{
-                    //create users
-                    $saveResponse = $this->userService->createUser($request,$otp=null,$request['role_id']);
-                    if($saveResponse){
-                        $response = [];
-                        $response['token'] = $saveResponse;
-                        $response['user_name'] = $request['name'];
-                        $response['email'] = $request['email'];
-                        $response['role_id'] = $request['role_id'];
-                        $msg =  __("api_string.user_register_by_firebase");
-                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]); 
+                    $otp = rand(100000,999999);
+                    // check email
+                    $checkEmail = $this->userService->checkEmail($request['email']);
+                    if($checkEmail){
+                            // move to login
+                        $msg=__("api_string.user_exist");
+                        return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
+                    }else{
+                        //create users
+                        $saveResponse = $this->userService->createUser($request,$otp,$request['role_id']);
+                        if($saveResponse){
+                            $msg =  __("api_string.verify_email");
+                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,'otp'=>$otp,"role_id"=>$request['role_id'],"email"=>$request['email'],]); 
+                        }
                     }
                 }
-            }else{
-                $otp = rand(100000,999999);
-                // check email
-                $checkEmail = $this->userService->checkEmail($request['email']);
-                if($checkEmail){
-                        // move to login
-                    $msg=__("api_string.user_exist");
-                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
-                }else{
-                    //create users
-                    $saveResponse = $this->userService->createUser($request,$otp,$request['role_id']);
-                    if($saveResponse){
-                        $msg =  __("api_string.verify_email");
-                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,'otp'=>$otp,"role_id"=>$request['role_id'],"email"=>$request['email'],]); 
-                    }
-                }
+            } else{
+                return response()->json(["message"=>"Select a valid role", "statusCode"=>422]);
             }
     
         } catch (\Throwable $th) {
@@ -242,21 +248,28 @@ class AuthController extends Controller
             }
             $checkEmail = $this->userService->checkEmail($request['email']);
             if($checkEmail && $checkEmail['role_id']== 0){
+                $roles=Config::get('app.roles');
+                unset($roles[0]);
+                if($request['role_id'] && in_array($request['role_id'],$roles)){
+                    $roleId = $request['role_id'];
                 $updateResponse = $this->userService->updateRoleByUserEmail($request);
+                }else{
+                    return response()->json(["status"=>false,'statusCode'=>422,"data"=>"Select valid role"]);
+                }
                 if($updateResponse){
                     $token = $this->userService->generateJwtToken($checkEmail);
-                    if($token){
-                        $response = [];
-                        $response['token'] = $token;
-                        $response['user_name'] = $checkEmail['name'];
-                        $response['email'] = $checkEmail['email'];
-                        $response['role_id'] = $request['role_id'];
-                        $msg =  __("api_string.user_role_token");
-                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);
-                    }else{
-                        $msg = __("api_string.role_updated_status");
-                        return response()->json(['statusCode'=>204,'Status'=>false,'msg'=>$msg]);
-                    }
+                            if($token){
+                                $response = [];
+                                $response['token'] = $token;
+                                $response['user_name'] = $checkEmail['name'];
+                                $response['email'] = $checkEmail['email'];
+                                $response['role_id'] = $request['role_id'];
+                                $msg =  __("api_string.user_role_token");
+                                return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);
+                            }else{
+                                $msg = __("api_string.role_updated_status");
+                                return response()->json(['statusCode'=>204,'Status'=>false,'msg'=>$msg]);
+                            }        
                 }
             }
 
