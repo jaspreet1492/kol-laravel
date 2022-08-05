@@ -69,12 +69,10 @@ Route::middleware(['api'])->group(function () {
     Route::get('Chat/chat-list',[ChatController::class,'getChatData']);
     Route::get('Chat/delete-msg',[ChatController::class,'deleteChat']);
     Route::put('Chat/edit-msg',[ChatController::class,'editChat']);
-    Route::get('dashboard/get-total-count',[DashboardController::class,'getTotalCount']);
-    Route::post('dashboard/contactUs',[DashboardController::class,'contactUs']);
     Route::get('view-all-user',[UserController::class,'displayAllUser']);
     Route::get('view-user-details', [UserController::class, 'getUserDetailsByID']);
     Route::post('update-user-data', [UserController::class, 'updateUserDetails']);
-    Route::post('add-user-address', [UserController::class, 'storeUserAddress']);
+    // Route::post('add-user-address', [UserController::class, 'storeUserAddress']);
     
   });
   
@@ -83,11 +81,8 @@ Route::middleware(['api'])->group(function () {
   
     Route::post('dashboard/add-update-banner',[DashboardController::class,'AddUpdateBanner']);
     Route::post('dashboard/add-update-faq',[DashboardController::class,'AddUpdateFaq']);
-    Route::get('dashboard/banner-list',[DashboardController::class,'getBannerList']);
-    Route::get('dashboard/faq-list',[DashboardController::class,'getFaqList']);
     Route::delete('dashboard/banner-delete',[DashboardController::class,'deleteBanner']);
     Route::post('dashboard/add-update-information',[DashboardController::class,'AddUpdateInformativeVideo']);
-    Route::get('dashboard/information-list',[DashboardController::class,'getInformativeVideoList']);
     Route::delete('dashboard/delete-information',[DashboardController::class,'deleteInformativeVideo']);
     Route::delete('dashboard/delete-faq',[DashboardController::class,'deleteFaq']);
     Route::put('kol-profile/is_featured',[KolProfileController::class,'FeatureKolProfile']);
@@ -98,6 +93,11 @@ Route::middleware(['api'])->group(function () {
   Route::get('language-list',[KolTypeController::class,'getLanguage']);
   Route::get('state-list',[KolTypeController::class,'getState']);
   Route::get('stream-list',[KolTypeController::class,'getStream']);
+  Route::get('dashboard/banner-list',[DashboardController::class,'getBannerList']);
+  Route::get('dashboard/information-list',[DashboardController::class,'getInformativeVideoList']);
+  Route::get('dashboard/faq-list',[DashboardController::class,'getFaqList']);
+  Route::get('dashboard/get-total-count',[DashboardController::class,'getTotalCount']);
+  Route::post('dashboard/contactUs',[DashboardController::class,'contactUs']);
 
 
  

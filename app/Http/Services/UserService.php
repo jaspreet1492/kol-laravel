@@ -901,22 +901,32 @@ class UserService
 
     public function getAnnouncementListByKolUserId($request, $userId){
 
+        $kolAnnouncementList = [];
         $pageNo = ($request['page']) ? $request['page'] : 1;
         $limit = ($request['limit']) ? $request['limit'] : 10;
 
         $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->get();
+        $AnnouncementListCount = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->count();
 
-        return $AnnouncementList;
+        $kolAnnouncementList['kolAnnouncementList'] = $AnnouncementList;
+        $kolAnnouncementList['AnnouncementListCount'] = $AnnouncementListCount;
+        
+        return $kolAnnouncementList;
     }
 
     public function getAnnouncementList($request,$userId){
-        
+
+        $logggedInUserAnnouncementList = [];
         $pageNo = ($request['page']) ? $request['page'] : 1;
         $limit = ($request['limit']) ? $request['limit'] : 10;
 
         $AnnouncementList = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->get();
+        $AnnouncementListCount = Announcement::where('user_id',$userId)->where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->count();
 
-        return $AnnouncementList;
+        $logggedInUserAnnouncementList['logggedInUserAnnouncementList'] = $AnnouncementList;
+        $logggedInUserAnnouncementList['AnnouncementListCount'] = $AnnouncementListCount;
+
+        return $logggedInUserAnnouncementList;
     }
 
     public function getBannerList(){
@@ -980,12 +990,17 @@ class UserService
 
     public function getAllAnnouncementList($request){
 
+        $allAnnoucementData = [];
         $pageNo = ($request['page']) ? $request['page'] : 1;
         $limit = ($request['limit']) ? $request['limit'] : 10;
 
         $AnnouncementList = Announcement::where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->get();
+        $AnnouncementListCount = Announcement::where('status',1)->with('getUser')->skip(($pageNo - 1) * $limit)->take($limit)->count();
 
-        return $AnnouncementList;
+        $allAnnoucementData['AnnouncementList'] = $AnnouncementList;
+        $allAnnoucementData['AnnouncementListCount'] = $AnnouncementListCount ;
+
+        return $allAnnoucementData;
     }
 
     public function deleteAnnouncement($id){
@@ -1136,7 +1151,7 @@ class UserService
     }
     public function FeatureKolProfile($request)
     {
-
+        
         $kol_profile_id = $request['kol_profile_id'];
         $is_featured = $request['is_featured'];
         $updateData = [];
@@ -1330,15 +1345,13 @@ class UserService
     
     public function getFeaturedProfileList($request){
         
-       
-        $kolProfiles = KolProfile::with('getUser','getSocialMedia', 'getBookmark', 'getFeedbacks')->where('is_featured', 1)->where('status', 1)->get();
+        $kolProfiles = KolProfile::with('getUser','getSocialMedia', 'getBookmark', 'getFeedbacks','getAddress')->where('is_featured', 1)->where('status', 1)->get();
         $listProfiles = [];
         $listSocialMedia = [];
         $listFeedback = [];
         $i = 0;
-        //dd($kolProfiles);
+
         foreach($kolProfiles as $key => $profileList){
-            // dd($profileList);
             $listProfiles[$i]['profile_id'] = $profileList['id'];
             $listProfiles[$i]['languages'] = $profileList['languages'];
             $listProfiles[$i]['is_featured'] = $profileList['is_featured'];
@@ -1361,8 +1374,15 @@ class UserService
             $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
             $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
             $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
+            $listProfiles[$i]['Address']['address'] = $profileList['getAddress']['address'];
+            $listProfiles[$i]['Address']['landmark'] = $profileList['getAddress']['landmark'];
+            $listProfiles[$i]['Address']['zip'] = $profileList['getAddress']['zip'];
+            $listProfiles[$i]['Address']['city'] = $profileList['getAddress']['city'];
+            $listProfiles[$i]['Address']['state'] = $profileList['getAddress']['state'];
+            $listProfiles[$i]['Address']['country'] = $profileList['getAddress']['country'];
             $listProfiles[$i]['bookmark'] = ($profileList['getBookmark']==null)? false : true;
-            // dd($profileList['getFeedbacks']);
+
+            
             $j = 0;
             foreach($profileList['getSocialMedia'] as $socialAccounts){
                 $listSocialMedia[$j]['social_media_id'] = $socialAccounts['id'];
@@ -1394,6 +1414,17 @@ class UserService
 
     public function searchUserByName($search){
         return User::where('name', 'like', '%'.$search.'%')->pluck('id');
+    } 
+    
+    public function getUserRoleById($userId){
+        return User::select('role_id')->where('id', $userId)->first();
+    }
+
+    public function getMsgById($msgId,$userId)
+    {
+        return ChatThread::where('id', $msgId)
+        ->where('status',1)
+        ->where('sender_id',$userId)->first();
     }
 
     public function sortFollowers($orderBy,$sortBY,$socialMedia){

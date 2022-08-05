@@ -46,7 +46,7 @@ class UserController extends Controller
   public function storeUserAddress(Request $request)
   {
     $userId = Auth::user()->id;
-    $createUserAddress = $this->userService->addUserAdress($userId, $request);
+    $createUserAddress = $this->userService->AddAddress($request, $userId);
   }
 
   public function storeUserImage(Request $request)
@@ -58,54 +58,56 @@ class UserController extends Controller
   }
 
 
-  public function updateUserDetails(Request $request)
-  {
-    $response = $this->userService->updateData($request);
-    return response()->json(['statusCode' => 201, 'success' => true, 'message' => "data updated successfully",]);
-  }
 
   public function addUserAddress(Request $request)
   {
-    $userId = Auth::user()->id;
-    $roleId = Auth::user()->role_id;
+    try {
+        $userId = Auth::user()->id;
+        $roleId = Auth::user()->role_id;
 
-    if($roleId == 2 || $roleId == 3){  
-      $valdiation = Validator::make($request->all(),[
-        'phone' => 'nullable|regex:/^([0-9\s\-\+\(\)]*)$/|max:10' 
-      ]);
+        if($roleId == 2 || $roleId == 3){  
+          $valdiation = Validator::make($request->all(),[
+            'phone' => 'nullable|regex:/^([0-9\s\-\+\(\)]*)$/|max:10' 
+          ]);
+    
+          if($valdiation->fails()) {
+              $msg = $valdiation->errors()->first();
+              return response()->json(["message"=>$msg, "statusCode"=>422]);
+          }  
+    
+          if($request['state']){
+            $states = Config('app.states');
+            $stateCheck = in_array($request['state'],$states);
+            if(!$stateCheck){
+              $msg=__("api_string.valid_state");
+              return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
+            }
+          }
+          $updateUserDetails = $this->userService->UpdateUserDetails($request,$userId);
 
-      if($valdiation->fails()) {
-          $msg = $valdiation->errors()->first();
-          return response()->json(["message"=>$msg, "statusCode"=>422]);
-      }  
+          $checkAddress = $this->userService->checkAddressExistOrNot($userId);
 
-      if($request['state']){
-        $states = Config('app.states');
-        $stateCheck = in_array($request['state'],$states);
-  
-        if(!$stateCheck){
-          $msg=__("api_string.valid_state");
-          return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
-        }
+          if($checkAddress){
+            //update address
+            $checkProfile = $this->userService->UpdateAddress($request,$userId);
+            $msg=__("api_string.address_added");
+            return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
+
+          }else{
+            //add address
+            $addAddress = $this->userService->AddAddress($request,$userId);
+            $msg=__("api_string.address_added");
+            return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);     
+          }
+          return response()->json(['statusCode' => 201, 'success' => true, 'message' => "address added successfully",]);
+        }else{
+          $msg=__("api_string.not_authorized");
+          return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
       }
-
-      $updateUserDetails = $this->userService->UpdateUserDetails($request,$userId);
-
-      $checkAddress = $this->userService->checkAddressExistOrNot($userId);
-
-      if($checkAddress){
-        //update address
-        $checkProfile = $this->userService->UpdateAddress($request,$userId);
-        $msg=__("api_string.address_added");
-        return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
-
-      }else{
-        //add address
-        $addAddress = $this->userService->AddAddress($request,$userId);
-        $msg=__("api_string.address_added");
-        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);     
-      }
-      return response()->json(['statusCode' => 201, 'success' => true, 'message' => "address added successfully",]);
+      } catch (\Throwable $th) {
+        $msg= __("api_string.error");
+        return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
     }
   }
+      
 }
