@@ -12,7 +12,7 @@ use Validator;
 use JWTAuth;
 
 class DealController extends Controller
-{
+{ 
     private $userService;
     public function __construct(UserService $userService){
         $this->userService = $userService;
