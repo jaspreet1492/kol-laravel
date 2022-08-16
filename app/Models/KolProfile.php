@@ -41,6 +41,16 @@ class KolProfile extends Model
     
     }
 
+    public function getAddress(){
+        return $this->hasOne(Address::class,'user_id','user_id');
+    
+    }
+
+    public function getDeal(){
+        return $this->hasMany(Deal::class,'kol_profile_id','id');
+    
+    }
+
     public function getFeedbacks(){
         return $this->hasMany(Feedback::class,'kol_profile_id','id');
     

@@ -15,6 +15,7 @@ class KolProfileController extends Controller
     public function __construct(UserService $userService){
         $this->userService = $userService;
     }
+    
     public function saveProfileView(Request $request)
     {
     try{
@@ -72,7 +73,7 @@ class KolProfileController extends Controller
                     'video_links.*'=>'required|url',
                     'tags.*' => 'required',
                     'personal_email' => 'nullable|email',
-                    'social_active.*'=>'required',
+                    'social_active'=>'required',
                     'social_media.*.name'=>'required',
                     'social_media.*.social_icon'=>'required',
                     'social_media.*.social_user_id'=>'required',
@@ -88,7 +89,7 @@ class KolProfileController extends Controller
                 $streams = Config('app.stream');
                 $kolTypes = $this->userService->ViewKolType($request['kol_type']);
                 $countLang = count(array_intersect($langauges,$request['languages']));
-                $countstream = count(array_intersect($streams,$request['social_active']));
+                $countstream = in_array($request['social_active'],$streams);
                 $countsocial = count(array_intersect($streams,array_column($request['social_media'],'name')));
                 $stateCheck = in_array($request['state'],$states);
 
@@ -96,7 +97,7 @@ class KolProfileController extends Controller
                     $msg=__("api_string.valid_langauge");
                     return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
                 }
-                if($countstream !== count($request['social_active'])){
+                if(!$countstream){
                     $msg=__("api_string.valid_stream");
                     return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
                 }
@@ -112,7 +113,7 @@ class KolProfileController extends Controller
                     $msg=__("api_string.valid_kol_type");
                     return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
                 };
-            
+                
                 $userId = auth()->user()->id;
                 $checkProfile = $this->userService->checkKolProfileExistOrNot($userId);
                
@@ -146,27 +147,34 @@ class KolProfileController extends Controller
         try {
             $roleId = auth()->user()->role_id;
             if($roleId == 1){
+                $valdiation = Validator::make($request->all(),[
+                    'kol_profile_id' => 'required',
+                    'is_featured' => 'required|in:1,0'
+                ]);
 
+                if($valdiation->fails()) {
+                    $msg = $valdiation->errors()->first();
+                    return response()->json(["message"=>$msg, "statusCode"=>422]);
+                }
+                
                 $kolProfileData = $this->userService->checkKolProfileIdExistOrNot($request['kol_profile_id']);
                 
                 if(!$kolProfileData){
                     return response()->json(["statusCode"=>422,"status"=>false,"message"=>"kol profile does not exist"]);
                 }
 
-                if($request['is_featured'] === 1){
+                if($request['is_featured'] == 1){
                     // feature kol profile
                     $checkProfile = $this->userService->FeatureKolProfile($request);
                     $msg=__("api_string.featured_profile");
                 } 
-                if($request['is_featured'] === 0){
+                if($request['is_featured'] == 0){
                     // unfeature kol profile
                     $checkProfile = $this->userService->FeatureKolProfile($request);
                     $msg=__("api_string.unfeatured_profile");    
                     
-                } else {
-                    $msg= __("api_string.error");
-                    return response()->json(["statusCode"=>422,"status"=>false,"message"=>$msg]);
                 }
+                
                 return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
             }else{
                 $msg=__("api_string.not_authorized");

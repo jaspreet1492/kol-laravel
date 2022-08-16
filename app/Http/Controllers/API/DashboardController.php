@@ -26,7 +26,9 @@ class DashboardController extends Controller
             if($roleId == 1){
                 
                 $valdiation = Validator::make($request->all(),[
-                    'banner' => 'required'
+                    'title' => 'nullable|alpha_num',
+                    'description' => 'nullable|alpha_num',
+                    'banner' => 'required|mimes:png,jpeg,jpg'
                 ]);
                 if($valdiation->fails()) {
                     $msg = __("api_string.invalid_fields");
@@ -82,7 +84,7 @@ class DashboardController extends Controller
     public function getInformativeVideoList(Request $request){
 
         $InformativeVideoList = $this->userService->getInformativeVideoList();
-        return response()->json(["status"=>true,"statusCode"=>200,"Informative Videos"=>$InformativeVideoList]);
+        return response()->json(["status"=>true,"statusCode"=>200,"InformativeVideos"=>$InformativeVideoList]);
     }
 
     public function getTotalCount(Request $request){
@@ -95,18 +97,15 @@ class DashboardController extends Controller
             'TotalKolUsers' => $TotalKol, 
             'TotalVideos' => $TotalVideos
         ];
-        return response()->json(["status"=>true,"statusCode"=>200,"Informative Videos"=>$TotalData]);
+        return response()->json(["status"=>true,"statusCode"=>200,"InformativeVideos"=>$TotalData]);
     }
 
     public function contactUs(Request $request){
 
         try {
-                
+        
             $valdiation = Validator::make($request->all(),[
-                'first_name' => 'required',
-                'last_name' => 'required',
-                'email' => 'required',
-                'mobile' => 'required',
+                'email' => 'required|email',
                 'messsage' => 'required'
             ]);
             if($valdiation->fails()) {
@@ -134,8 +133,8 @@ class DashboardController extends Controller
             if($roleId == 1){
                 
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required|alpha_num',
-                    'description' => 'required|alpha_num',
+                    'title' => 'required|string',
+                    'description' => 'required|string',
                     'banner' => 'required|mimes:png,jpeg,jpg'
                 ]);
                 if($valdiation->fails()) {
@@ -221,10 +220,10 @@ class DashboardController extends Controller
     }
 
     public function deleteBanner(Request $request){
-        $checkBanner = $this->userService->checkBannerExistOrNot($request['kol_profile_id']);
+        $checkBanner = $this->userService->checkBannerExistOrNot($request['id']);
     
         if($checkBanner){
-            $BannerData = $this->userService->deleteBanner($request['kol_profile_id']);
+            $BannerData = $this->userService->deleteBanner($request['id']);
             $statusCode= 200;
             $msg=__("api_string.banner_deleted");
         } else{

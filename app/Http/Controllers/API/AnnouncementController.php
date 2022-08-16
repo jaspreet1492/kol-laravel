@@ -88,18 +88,18 @@ class AnnouncementController extends Controller
     public function getAnnouncementListByKolUserId(Request $request){
         $userId = $request['id'];
         $announcements = $this->userService->getAnnouncementListByKolUserId($request,$userId);
-        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
+        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements['kolAnnouncementList'],"kolAnnouncementListCount" => $announcements['AnnouncementListCount']]);
     }
 
     public function getAnnouncementList(Request $request){
         $userId = auth()->user()->id;
         $announcements = $this->userService->getAnnouncementList($request,$userId);
-        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
+        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements['logggedInUserAnnouncementList'],"logggedInUserAnnouncementList" => $announcements['AnnouncementListCount']]);
     }
 
     public function getAllAnnouncementList(Request $request){
         $announcements = $this->userService->getAllAnnouncementList($request);
-        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements]);
+        return response()->json(["status"=>true,"statusCode"=>200,"announcements"=>$announcements['AnnouncementList'],"AnnouncementList" => $announcements['AnnouncementListCount']]);
     }
 
     public function deleteAnnouncement(Request $request){
