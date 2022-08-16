@@ -15,6 +15,7 @@ class KolProfileController extends Controller
     public function __construct(UserService $userService){
         $this->userService = $userService;
     }
+    
     public function saveProfileView(Request $request)
     {
     try{
@@ -72,7 +73,7 @@ class KolProfileController extends Controller
                     'video_links.*'=>'required|url',
                     'tags.*' => 'required',
                     'personal_email' => 'nullable|email',
-                    'social_active.*'=>'required',
+                    'social_active'=>'required',
                     'social_media.*.name'=>'required',
                     'social_media.*.social_icon'=>'required',
                     'social_media.*.social_user_id'=>'required',
@@ -88,7 +89,7 @@ class KolProfileController extends Controller
                 $streams = Config('app.stream');
                 $kolTypes = $this->userService->ViewKolType($request['kol_type']);
                 $countLang = count(array_intersect($langauges,$request['languages']));
-                $countstream = count(array_intersect($streams,$request['social_active']));
+                $countstream = in_array($request['social_active'],$streams);
                 $countsocial = count(array_intersect($streams,array_column($request['social_media'],'name')));
                 $stateCheck = in_array($request['state'],$states);
 
@@ -96,7 +97,7 @@ class KolProfileController extends Controller
                     $msg=__("api_string.valid_langauge");
                     return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
                 }
-                if($countstream !== count($request['social_active'])){
+                if(!$countstream){
                     $msg=__("api_string.valid_stream");
                     return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
                 }
@@ -112,7 +113,7 @@ class KolProfileController extends Controller
                     $msg=__("api_string.valid_kol_type");
                     return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
                 };
-            
+                
                 $userId = auth()->user()->id;
                 $checkProfile = $this->userService->checkKolProfileExistOrNot($userId);
                

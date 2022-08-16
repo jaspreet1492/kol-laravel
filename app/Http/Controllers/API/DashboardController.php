@@ -103,12 +103,9 @@ class DashboardController extends Controller
     public function contactUs(Request $request){
 
         try {
-                
+        
             $valdiation = Validator::make($request->all(),[
-                'first_name' => 'required',
-                'last_name' => 'required',
-                'email' => 'required',
-                'mobile' => 'required',
+                'email' => 'required|email',
                 'messsage' => 'required'
             ]);
             if($valdiation->fails()) {

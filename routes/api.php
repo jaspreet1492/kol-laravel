@@ -11,6 +11,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\API\KolProfileController;
 use App\Http\Controllers\API\KolTypeController;
 use App\Http\Controllers\API\AnnouncementController;
+use App\Http\Controllers\API\DealController;
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\BookmarkController;
 use App\Http\Controllers\API\FeedbackController;
@@ -51,6 +52,9 @@ Route::middleware(['api'])->group(function () {
     Route::get('kol-profile/featured-list',[KolProfileController::class,'getFeaturedProfileList']);
     Route::put('kol-profile/add-view-count',[KolProfileController::class,'saveProfileView']);
     Route::post('announcement/add-update',[AnnouncementController::class,'AddorUpdateAnnouncement']);
+    Route::post('deal/add-update',[DealController::class,'AddorUpdateDeal']);
+    Route::get('deal/view-by-id',[DealController::class,'getDealsById']);
+    Route::delete('deal/delete',[DealController::class,'deleteDeal']);
     Route::post('bookmark/add',[BookmarkController::class,'AddBookmark']);
     Route::post('feedback/add',[FeedbackController::class,'AddFeedback']);
     Route::delete('bookmark/delete',[BookmarkController::class,'deleteBookmark']);

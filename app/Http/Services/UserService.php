@@ -17,6 +17,7 @@ use App\Models\Faq;
 use App\Models\InformativeVideo;
 use App\Http\Controllers\MailController;
 use App\Models\KolType;
+use App\Models\Deal;
 use App\Models\Bookmark;
 use App\Models\ContactUs;
 use Illuminate\Support\Facades\Auth;
@@ -419,7 +420,7 @@ class UserService
         $kolProfileData->state = $request['state'];
         $kolProfileData->zip_code = $request['zip_code'];
         $kolProfileData->city = $request['city'];
-        $kolProfileData->social_active = implode(',', $request['social_active']);
+        $kolProfileData->social_active = $request['social_active'];
         $kolProfileData->video_links = implode(',', $request['video_links']);
         $kolProfileData->tags = implode(',', $request['tags']);
         $kolProfileData->avatar = $profileImgUrl;
@@ -427,7 +428,7 @@ class UserService
         $kolProfileData->status = 1;
         $checkUserSaved = $kolProfileData->save();
         $lastProfileId = $kolProfileData->id;
-
+        
         if ($lastProfileId) {
             foreach ($request['social_media'] as $requestMediaData) {
     
@@ -461,6 +462,22 @@ class UserService
         $lastAnnouncementId = $AnnouncementData->id;
 
         return $lastAnnouncementId;
+    }
+
+    // Add Deal
+    public function AddDeal($request, $KolProfile)
+    {
+        $DealData = new Deal();
+        $DealData->kol_profile_id = $KolProfile['id'];
+        $DealData->title = $request['title'];
+        $DealData->description = $request['description'];
+        $DealData->type = $request['type'];
+        $DealData->total_days = $request['total_days'];
+        $DealData->price = $request['price'];
+        $DealDataSaved = $DealData->save();
+        $lastDealId = $DealData->id;
+
+        return $lastDealId;
     }
 
     // Add KolType
@@ -816,6 +833,26 @@ class UserService
         return $updateResponse;
     }
 
+
+    // Update Deal
+    public function UpdateDeal($request, $KolProfile)
+    {
+        $id = ($request['id']) ? $request['id'] : NULL;
+        $updateData = [];
+            
+        $updateData = [
+            'title' => $request['title'],
+            'description' => $request['description'],
+            'type' => $request['type'],
+            'total_days' => $request['total_days'],
+            'price' => $request['price'],
+        ];
+        
+        $updateResponse = Deal::where('id', $id)->where('kol_profile_id', $KolProfile['id'])->update($updateData);
+
+        return $updateResponse;
+    }
+
     // Update UserDetails
     public function UpdateUserDetails($request, $userId)
     {
@@ -829,7 +866,7 @@ class UserService
         ];
   
         $updateResponse = User::where('id', $userId)->update($updateData);
-
+        
         return $updateResponse;
     }
 
@@ -912,6 +949,13 @@ class UserService
         $kolAnnouncementList['AnnouncementListCount'] = $AnnouncementListCount;
         
         return $kolAnnouncementList;
+    }
+
+    public function getDealsById($id){
+
+        $Deal = Deal::where('id',$id)->where('status',1)->with('getKolProfile')->get();
+
+        return $Deal;
     }
 
     public function getAnnouncementList($request,$userId){
@@ -1010,6 +1054,13 @@ class UserService
         return $Announcement;
     }
 
+    public function deleteDeal($id){
+
+        $Deal = Deal::where('id',$id)->delete();
+
+        return $Deal;
+    }
+
     public function deleteBanner($id){
 
         $Banner = Banner::where('id',$id)->delete();
@@ -1069,7 +1120,7 @@ class UserService
                 'zip_code' => $request['zip_code'],
                 'city' => $request['city'],
                 'total_viewer' => $request['total_viewer'],
-                'social_active' => implode(',', $request['social_active']),
+                'social_active' => $request['social_active'],
                 'video_links' => implode(',', $request['video_links']),
                 'tags' => implode(',', $request['tags']),
                 'avatar' => $profileImgUrl,
@@ -1188,6 +1239,16 @@ class UserService
         return Announcement::where('id', $Id)->where('user_id',$userId)->first();
     }
 
+    public function checkDealExistOrNot($Id,$profileId)
+    {
+        return Deal::where('id', $Id)->where('kol_profile_id',$profileId)->first();
+    }
+
+    public function DealCount($profileId)
+    {
+        return Deal::where('kol_profile_id',$profileId)->count();
+    }
+
     public function checkAddressExistOrNot($userId)
     {
         return Address::where('user_id',$userId)->first();
@@ -1250,7 +1311,7 @@ class UserService
             
         }
         
-        $kolProfiles = KolProfile::with('getUser','getSocialMedia', 'getBookmark')
+        $kolProfiles = KolProfile::with('getUser','getSocialMedia', 'getBookmark','getDeal')
         ->where(function($query) use ($request,$UserIdByQuery, $sortBYQuery, $sortBY, $socialMedia){
             if(isset($request['languages']) && !empty($request['languages'])){
                 $query->whereRaw('Find_IN_SET(?, languages)', [$request['languages']]);
@@ -1271,7 +1332,7 @@ class UserService
             $query->where('role_id', '=', 2); // '=' is optional
         })->skip(($pageNo - 1) * $limit)->take($limit)->get();
 
-        $kolProfilesCount = KolProfile::with('getUser','getSocialMedia', 'getBookmark')
+        $kolProfilesCount = KolProfile::with('getUser','getSocialMedia', 'getBookmark','getDeal')
         ->where(function($query) use ($request,$UserIdByQuery){
             if(isset($request['languages']) && !empty($request['languages'])){
                 $query->whereRaw('Find_IN_SET(?, languages)', [$request['languages']]);
@@ -1294,8 +1355,9 @@ class UserService
         
         $listProfiles = [];
         $listSocialMedia = [];
+        $listDeals = [];
         $i = 0;
-
+        
         foreach($kolProfiles as $key => $profileList){
             $listProfiles[$i]['profile_id'] = $profileList['id'];
             $listProfiles[$i]['languages'] = $profileList['languages'];
@@ -1318,6 +1380,7 @@ class UserService
             $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
             $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
             $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
+            $listProfiles[$i]['deals'] = $profileList['getDeal'];
             $listProfiles[$i]['bookmark'] = ($profileList['getBookmark']==null)? false : true;
             
             $j = 0;
@@ -1330,6 +1393,7 @@ class UserService
                 $listSocialMedia[$j]['followers'] = $socialAccounts['followers'];
                 $j++;
             }
+
             $listProfiles[$i]['SocialMedia'] = $listSocialMedia;
 
             $i++;

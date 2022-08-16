@@ -51,10 +51,28 @@ class UserController extends Controller
 
   public function storeUserImage(Request $request)
   {
-    $userId = Auth::user()->id;
-    $uploadUserImage = $this->userService->storeUserImage($request, $userId);
+    try {
+      $userId = Auth::user()->id;
 
-    return response()->json(['statusCode' => 201, 'success' => true, 'message' => "Image uploaded successfully"]);
+        $valdiation = Validator::make($request->all(),[
+          'avatar' => 'required|mimes:png,jpeg,jpg' 
+        ]);
+  
+        if($valdiation->fails()) {
+            $msg = $valdiation->errors()->first();
+            return response()->json(["message"=>$msg, "statusCode"=>422]);
+        }  
+
+        $userId = Auth::user()->id;
+        $uploadUserImage = $this->userService->storeUserImage($request, $userId);
+
+        return response()->json(['statusCode' => 201, 'success' => true, 'message' => "Image uploaded successfully"]);
+
+    } catch (\Throwable $th) {
+        $msg= __("api_string.error");
+        return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+    }
+    
   }
 
 
