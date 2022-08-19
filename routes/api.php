@@ -80,7 +80,7 @@ Route::middleware(['api'])->group(function () {
     Route::get('view-user-details', [UserController::class, 'getUserDetailsByID']);
     Route::post('update-user-data', [UserController::class, 'updateUserDetails']);
     // Route::post('add-user-address', [UserController::class, 'storeUserAddress']);
-    
+     
   });
   
   
