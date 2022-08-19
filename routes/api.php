@@ -12,6 +12,7 @@ use App\Http\Controllers\API\KolProfileController;
 use App\Http\Controllers\API\KolTypeController;
 use App\Http\Controllers\API\AnnouncementController;
 use App\Http\Controllers\API\DealController;
+use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\BookmarkController;
 use App\Http\Controllers\API\FeedbackController;
@@ -56,6 +57,7 @@ Route::middleware(['api'])->group(function () {
     Route::post('deal/watch-deal',[DealController::class,'watchDeal']);
     Route::delete('deal/delete',[DealController::class,'deleteDeal']);
     Route::get('deal/my-deals',[DealController::class,'getDealsListByLoggedInKolUser']);
+    Route::post('order/place-order',[OrderController::class,'placeOrder']);
     Route::post('bookmark/add',[BookmarkController::class,'AddBookmark']);
     Route::post('feedback/add',[FeedbackController::class,'AddFeedback']);
     Route::delete('bookmark/delete',[BookmarkController::class,'deleteBookmark']);
@@ -78,7 +80,7 @@ Route::middleware(['api'])->group(function () {
     Route::get('view-user-details', [UserController::class, 'getUserDetailsByID']);
     Route::post('update-user-data', [UserController::class, 'updateUserDetails']);
     // Route::post('add-user-address', [UserController::class, 'storeUserAddress']);
-    
+     
   });
   
   
