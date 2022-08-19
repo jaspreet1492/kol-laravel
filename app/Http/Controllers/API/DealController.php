@@ -8,6 +8,7 @@ use PhpParser\Node\Stmt\TryCatch;
 use App\Http\Services\UserService;
 use Illuminate\Support\Facades\Auth;
 use App\Models\KolProfile;
+use App\Models\User;
 use Validator;
 use JWTAuth;
 
@@ -27,11 +28,11 @@ class DealController extends Controller
     
             if($roleId == 2){
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required', 
-                    'description' => 'required', 
+                    'title' => 'required|regex:/^[a-z0-9 ]+$/i', 
+                    'description' => 'required|regex:/^[a-z0-9 ]+$/i', 
                     'type' => 'required|in:image,video',
-                    'total_days' => 'required', 
-                    'price' => 'required'
+                    'total_days' => 'required|integer', 
+                    'price' => 'required|integer'
                 ]);
                 if($valdiation->fails()) {
                     $msg = __("api_string.invalid_fields");
@@ -43,7 +44,7 @@ class DealController extends Controller
                 
                 $checkDealCount = $this->userService->DealCount($profileId);
 
-                if($checkDealCount < 5){
+    
                     if($KolProfile !=null){
                         if($request['id']){
                             // update deal
@@ -52,16 +53,18 @@ class DealController extends Controller
                             return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
                         } else{
                             //add deal
-                            $addDeal = $this->userService->AddDeal($request,$KolProfile);
-                            $msg=__("api_string.deal_added");
-                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);     
+                            if($checkDealCount < 5){
+                                $addDeal = $this->userService->AddDeal($request,$KolProfile);
+                                $msg=__("api_string.deal_added");
+                                return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);  
+                            } else {
+                                return response()->json(["status"=>false,'statusCode'=>403,"message"=>"You cannot create more than 5 Deals."]);
+                            }   
                         }
                     } else{
                         return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
                     }
-                } else {
-                    return response()->json(["status"=>false,'statusCode'=>403,"message"=>"You cannot create more than 5 Deals."]);
-                }
+
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");
@@ -80,6 +83,20 @@ class DealController extends Controller
         return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
     }
 
+    public function getDealsListByKolProfileId(Request $request){
+        $kolProfileId = $request['kol_profile_id'];
+        $deals = $this->userService->getDealsListByKolProfileId($kolProfileId);
+        return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+    }
+
+    public function getDealsListByLoggedInKolUser(Request $request){
+        $userId = auth()->user()->id;
+        $checkKolProfile = $this->userService->checkKolProfileExistOrNot($userId);
+        $kolProfileId = $request['kol_profile_id'];
+        $deals = $this->userService->getDealsListByKolProfileId($checkKolProfile['id']);
+        return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+    }
+
     public function deleteDeal(Request $request){
         $userId = auth()->user()->id;
         $checkKolProfile = $this->userService->checkKolProfileExistOrNot($userId);
@@ -87,7 +104,7 @@ class DealController extends Controller
         $checkDeal = $this->userService->checkDealExistOrNot($request['id'],$checkKolProfile['id']);
 
         if($checkDeal){
-            $dealData = $this->userService->deleteDeal($request['id']);
+            $dealData = $this->userService->deleteDeal($request['id'],$checkKolProfile['id']);
             $statusCode= 200;
             $msg=__("api_string.deal_deleted");
         } else{
@@ -103,45 +120,82 @@ class DealController extends Controller
         try {
             $roleId = auth()->user()->role_id;
             $userId = auth()->user()->id;
-            $KolProfile= KolProfile::select('id')->where('user_id',$userId)->first(); 
     
             if($roleId == 3){
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required', 
-                    'description' => 'required', 
-                    'type' => 'required|in:image,video',
-                    'total_days' => 'required', 
-                    'price' => 'required'
+                    'kol_profile_id' => 'required'
                 ]);
                 if($valdiation->fails()) {
                     $msg = __("api_string.invalid_fields");
                     return response()->json(["message"=>$msg, "statusCode"=>422]);
                 }
-                
-                $id = $request['id']; 
-                $profileId = $KolProfile['id'];   
-                
-                $checkDealCount = $this->userService->DealCount($profileId);
 
-                if($checkDealCount < 5){
-                    if($KolProfile !=null){
-                        if($request['id']){
-                            // update deal
-                            $UpdateDeal = $this->userService->UpdateDeal($request,$KolProfile);
-                            $msg=__("api_string.deal_updated");
-                            return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
+                $kol_profile_id = $request['kol_profile_id']; 
+                $KolProfile= KolProfile::where('id',$kol_profile_id)->where('status', 1)->with('getUser')->whereHas('getUser', function($query) use($request) {
+                    $query->where('role_id', '=', 2); })->first();
+                if($KolProfile){
+                    $checkDealCount = $this->userService->DealCount($kol_profile_id);
+                
+                    if($checkDealCount == null || $checkDealCount == ''){
+                        if($KolProfile !=null){
+                            //request kol to create deal
+                            $addDeal = $this->userService->requestDeal($request,$userId);
+                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>'Request Sent']);   
                         } else{
-                            //add deal
-                            $addDeal = $this->userService->AddDeal($request,$KolProfile);
-                            $msg=__("api_string.deal_added");
-                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);     
+                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
                         }
+                    } else {
+                        return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Kol already has deals."]);
+                    }
+                    
+                } else {
+                    return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Enter Valid Kol id."]);
+                }  
+
+            }else{
+                //Not Authorized
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+            }
+            
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage(), 'trace'=>$th->getTraceAsString()]);
+        }
+    }
+
+    public function watchDeal(Request $request){
+
+        try {
+            $roleId = auth()->user()->role_id;
+            $kolUserId = auth()->user()->id;
+    
+            if($roleId == 2){
+                $valdiation = Validator::make($request->all(),[
+                    'id' => 'required',
+                    'end_user_id' => 'required' 
+                ]);
+                if($valdiation->fails()) {
+                    $msg = __("api_string.invalid_fields");
+                    return response()->json(["message"=>$msg, "statusCode"=>422]);
+                }
+
+                $end_user_id = $request['end_user_id']; 
+                $User= User::where('id',$end_user_id)->where('role_id',3)->where('status', 1)->first(); 
+                
+                if($User){
+                    if($User !=null){
+                        //watch the deal request
+                        $addDeal = $this->userService->watchDeal($request,$kolUserId);
+                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>'Success']);   
                     } else{
                         return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
                     }
+                    
                 } else {
-                    return response()->json(["status"=>false,'statusCode'=>403,"message"=>"You cannot create more than 5 Deals."]);
-                }
+                    return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Enter Valid User id"]);
+                }  
+
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");

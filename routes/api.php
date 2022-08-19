@@ -49,12 +49,13 @@ Route::middleware(['api'])->group(function () {
     Route::get('kol-profile/view',[KolProfileController::class,'getKolProfileById']);
     Route::get('kol-profile/view-details',[KolProfileController::class,'getKolProfile']);
     Route::get('kol-profile/list',[KolProfileController::class,'getProfileList']);
-    Route::get('kol-profile/featured-list',[KolProfileController::class,'getFeaturedProfileList']);
     Route::put('kol-profile/add-view-count',[KolProfileController::class,'saveProfileView']);
     Route::post('announcement/add-update',[AnnouncementController::class,'AddorUpdateAnnouncement']);
     Route::post('deal/add-update',[DealController::class,'AddorUpdateDeal']);
-    Route::get('deal/view-by-id',[DealController::class,'getDealsById']);
+    Route::post('deal/request-deal',[DealController::class,'requestDeal']);
+    Route::post('deal/watch-deal',[DealController::class,'watchDeal']);
     Route::delete('deal/delete',[DealController::class,'deleteDeal']);
+    Route::get('deal/my-deals',[DealController::class,'getDealsListByLoggedInKolUser']);
     Route::post('bookmark/add',[BookmarkController::class,'AddBookmark']);
     Route::post('feedback/add',[FeedbackController::class,'AddFeedback']);
     Route::delete('bookmark/delete',[BookmarkController::class,'deleteBookmark']);
@@ -102,7 +103,9 @@ Route::middleware(['api'])->group(function () {
   Route::get('dashboard/faq-list',[DashboardController::class,'getFaqList']);
   Route::get('dashboard/get-total-count',[DashboardController::class,'getTotalCount']);
   Route::post('dashboard/contactUs',[DashboardController::class,'contactUs']);
-
+  Route::get('kol-profile/featured-list',[KolProfileController::class,'getFeaturedProfileList']);
+  Route::get('deal/view-by-id',[DealController::class,'getDealsById']);
+  Route::get('deal/list-deals',[DealController::class,'getDealsListByKolProfileId']);
 
  
 
