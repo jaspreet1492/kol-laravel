@@ -465,25 +465,44 @@ class UserService
         return $lastAnnouncementId;
     }
 
-    // Request Deal
-    public function requestDeal($request, $userId)
+    // Place Order
+    public function placeOrder($request, $userId)
     {
-        $DealRequest = new DealRequest();
-        $DealRequest->end_user_id = $userId;
-        $DealRequest->kol_user_id = $request['kol_profile_id'];
-        $DealDataSaved = $DealRequest->save();
-        $lastDealId = $DealRequest->id;
+        $AnnouncementImg = Announcement::makeImageUrl($request['image']);
+        $AnnouncementData = new Announcement();
+        $AnnouncementData->user_id = $userId;
+        $AnnouncementData->profile_id = $profile_id;
+        $AnnouncementData->title = $request['title'];
+        $AnnouncementData->description = $request['description'];
+        $AnnouncementData->start_date = $request['start_date'];
+        $AnnouncementData->end_date = $request['end_date'];
+        $AnnouncementData->social_platform = $request['social_platform'];
+        $AnnouncementData->image = $AnnouncementImg;
+        $AnnouncementDataSaved = $AnnouncementData->save();
+        $lastAnnouncementId = $AnnouncementData->id;
 
-        return $lastDealId;
+        return $lastAnnouncementId;
     }
 
     // Request Deal
-    public function watchDeal($request, $kolUserId)
-    {
-        $updateResponse = DealRequest::where('id', $request['id'])->where('kol_user_id',$kolUserId)->where('end_user_id',$request['end_user_id'])->update(['status' => 0]);
+    // public function requestDeal($request, $userId)
+    // {
+    //     $DealRequest = new DealRequest();
+    //     $DealRequest->end_user_id = $userId;
+    //     $DealRequest->kol_user_id = $request['kol_profile_id'];
+    //     $DealDataSaved = $DealRequest->save();
+    //     $lastDealId = $DealRequest->id;
 
-        return $updateResponse;
-    }
+    //     return $lastDealId;
+    // }
+
+    // Request Deal
+    // public function watchDeal($request, $kolUserId)
+    // {
+    //     $updateResponse = DealRequest::where('id', $request['id'])->where('kol_user_id',$kolUserId)->where('end_user_id',$request['end_user_id'])->update(['status' => 0]);
+
+    //     return $updateResponse;
+    // }
 
     // Add Deal
     public function AddDeal($request, $KolProfile)
@@ -963,9 +982,9 @@ class UserService
         return $kolAnnouncementList;
     }
 
-    public function getDealsById($id){
+    public function getDealsById($id,$kolProfileId){
 
-        $Deal = Deal::where('id',$id)->where('status',1)->with('getKolProfile')->get();
+        $Deal = Deal::where('id',$id)->where('kol_profile_id',$kolProfileId)->where('status',1)->with('getKolProfile')->first();
 
         return $Deal;
     }

@@ -73,139 +73,198 @@ class DealController extends Controller
             
         } catch (\Throwable $th) {
             $msg= __("api_string.error");
-            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage(), 'trace'=>$th->getTraceAsString()]);
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
     }
 
     public function getDealsById(Request $request){
-        $id = $request['id'];
-        $deals = $this->userService->getDealsById($id);
-        return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+        try {
+            $roleId = auth()->user()->role_id;
+            $userId = auth()->user()->id;
+            $checkKolProfile = $this->userService->checkKolProfileExistOrNot($userId);
+            
+            if($roleId == 2){
+                $id = $request['id'];
+                $kolProfileId = $checkKolProfile['id'];
+                $deal = $this->userService->getDealsById($id,$kolProfileId);
+                if($deal){
+                    return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deal]);
+                } else {
+                    return response()->json(["status"=>true,"statusCode"=>200,"deals"=>"No deal available"]);
+                }
+                
+            }else{
+                //Not Authorized
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+            }
+    
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
     }
 
     public function getDealsListByKolProfileId(Request $request){
-        $kolProfileId = $request['kol_profile_id'];
-        $deals = $this->userService->getDealsListByKolProfileId($kolProfileId);
-        return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+        
+        try {
+            $userId = auth()->user();
+
+            if($userId){
+                $kolProfileId = $request['kol_profile_id'];
+                $deals = $this->userService->getDealsListByKolProfileId($kolProfileId);
+                return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+            }else{
+                //Not Authorized
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+            }
+            
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
     }
 
     public function getDealsListByLoggedInKolUser(Request $request){
-        $userId = auth()->user()->id;
-        $checkKolProfile = $this->userService->checkKolProfileExistOrNot($userId);
-        $kolProfileId = $request['kol_profile_id'];
-        $deals = $this->userService->getDealsListByKolProfileId($checkKolProfile['id']);
-        return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+        try {
+            $roleId = auth()->user()->role_id;
+    
+            if($roleId == 2){
+                $userId = auth()->user()->id;
+                $checkKolProfile = $this->userService->checkKolProfileExistOrNot($userId);
+                $kolProfileId = $request['kol_profile_id'];
+                $deals = $this->userService->getDealsListByKolProfileId($checkKolProfile['id']);
+                return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+            }else{
+                //Not Authorized
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+            }
+            
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
     }
 
     public function deleteDeal(Request $request){
         $userId = auth()->user()->id;
         $checkKolProfile = $this->userService->checkKolProfileExistOrNot($userId);
 
-        $checkDeal = $this->userService->checkDealExistOrNot($request['id'],$checkKolProfile['id']);
+        if($checkKolProfile){
+            $checkDeal = $this->userService->checkDealExistOrNot($request['id'],$checkKolProfile['id']);
 
-        if($checkDeal){
-            $dealData = $this->userService->deleteDeal($request['id'],$checkKolProfile['id']);
-            $statusCode= 200;
-            $msg=__("api_string.deal_deleted");
+            if($checkDeal){
+                $dealData = $this->userService->deleteDeal($request['id'],$checkKolProfile['id']);
+                $statusCode= 200;
+                $msg=__("api_string.deal_deleted");
+            } else{
+                $statusCode= 204;
+                $msg=__("api_string.deal_already_deleted");
+            }
+            return response()->json(["status"=>true,'statusCode'=>$statusCode,"message"=>$msg]);
         } else{
-            $statusCode= 204;
-            $msg=__("api_string.deal_already_deleted");
+            //Not Authorized
+            $msg=__("api_string.not_authorized");
+            return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
         }
-        return response()->json(["status"=>true,'statusCode'=>$statusCode,"message"=>$msg]);
+
+        
     }
 
 
-    public function requestDeal(Request $request){
+    // public function requestDeal(Request $request){
 
-        try {
-            $roleId = auth()->user()->role_id;
-            $userId = auth()->user()->id;
+    //     try {
+    //         $roleId = auth()->user()->role_id;
+    //         $userId = auth()->user()->id;
     
-            if($roleId == 3){
-                $valdiation = Validator::make($request->all(),[
-                    'kol_profile_id' => 'required'
-                ]);
-                if($valdiation->fails()) {
-                    $msg = __("api_string.invalid_fields");
-                    return response()->json(["message"=>$msg, "statusCode"=>422]);
-                }
+    //         if($roleId == 3){
+    //             $valdiation = Validator::make($request->all(),[
+    //                 'kol_profile_id' => 'required'
+    //             ]);
+    //             if($valdiation->fails()) {
+    //                 $msg = __("api_string.invalid_fields");
+    //                 return response()->json(["message"=>$msg, "statusCode"=>422]);
+    //             }
 
-                $kol_profile_id = $request['kol_profile_id']; 
-                $KolProfile= KolProfile::where('id',$kol_profile_id)->where('status', 1)->with('getUser')->whereHas('getUser', function($query) use($request) {
-                    $query->where('role_id', '=', 2); })->first();
-                if($KolProfile){
-                    $checkDealCount = $this->userService->DealCount($kol_profile_id);
+    //             $kol_profile_id = $request['kol_profile_id']; 
+    //             $KolProfile= KolProfile::where('id',$kol_profile_id)->where('status', 1)->with('getUser')->whereHas('getUser', function($query) use($request) {
+    //                 $query->where('role_id', '=', 2); })->first();
+    //             if($KolProfile){
+    //                 $checkDealCount = $this->userService->DealCount($kol_profile_id);
                 
-                    if($checkDealCount == null || $checkDealCount == ''){
-                        if($KolProfile !=null){
-                            //request kol to create deal
-                            $addDeal = $this->userService->requestDeal($request,$userId);
-                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>'Request Sent']);   
-                        } else{
-                            return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
-                        }
-                    } else {
-                        return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Kol already has deals."]);
-                    }
+    //                 if($checkDealCount == null || $checkDealCount == ''){
+    //                     if($KolProfile !=null){
+    //                         //request kol to create deal
+    //                         $addDeal = $this->userService->requestDeal($request,$userId);
+    //                         return response()->json(["status"=>true,'statusCode'=>201,"message"=>'Request Sent']);   
+    //                     } else{
+    //                         return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
+    //                     }
+    //                 } else {
+    //                     return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Kol already has deals."]);
+    //                 }
                     
-                } else {
-                    return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Enter Valid Kol id."]);
-                }  
+    //             } else {
+    //                 return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Enter Valid Kol id."]);
+    //             }  
 
-            }else{
-                //Not Authorized
-                $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
-            }
+    //         }else{
+    //             //Not Authorized
+    //             $msg=__("api_string.not_authorized");
+    //             return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+    //         }
             
-        } catch (\Throwable $th) {
-            $msg= __("api_string.error");
-            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage(), 'trace'=>$th->getTraceAsString()]);
-        }
-    }
+    //     } catch (\Throwable $th) {
+    //         $msg= __("api_string.error");
+    //         return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+    //     }
+    // }
 
-    public function watchDeal(Request $request){
+    // public function watchDeal(Request $request){
 
-        try {
-            $roleId = auth()->user()->role_id;
-            $kolUserId = auth()->user()->id;
+    //     try {
+    //         $roleId = auth()->user()->role_id;
+    //         $kolUserId = auth()->user()->id;
     
-            if($roleId == 2){
-                $valdiation = Validator::make($request->all(),[
-                    'id' => 'required',
-                    'end_user_id' => 'required' 
-                ]);
-                if($valdiation->fails()) {
-                    $msg = __("api_string.invalid_fields");
-                    return response()->json(["message"=>$msg, "statusCode"=>422]);
-                }
+    //         if($roleId == 2){
+    //             $valdiation = Validator::make($request->all(),[
+    //                 'id' => 'required',
+    //                 'end_user_id' => 'required' 
+    //             ]);
+    //             if($valdiation->fails()) {
+    //                 $msg = __("api_string.invalid_fields");
+    //                 return response()->json(["message"=>$msg, "statusCode"=>422]);
+    //             }
 
-                $end_user_id = $request['end_user_id']; 
-                $User= User::where('id',$end_user_id)->where('role_id',3)->where('status', 1)->first(); 
+    //             $end_user_id = $request['end_user_id']; 
+    //             $User= User::where('id',$end_user_id)->where('role_id',3)->where('status', 1)->first(); 
                 
-                if($User){
-                    if($User !=null){
-                        //watch the deal request
-                        $addDeal = $this->userService->watchDeal($request,$kolUserId);
-                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>'Success']);   
-                    } else{
-                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
-                    }
+    //             if($User){
+    //                 if($User !=null){
+    //                     //watch the deal request
+    //                     $addDeal = $this->userService->watchDeal($request,$kolUserId);
+    //                     return response()->json(["status"=>true,'statusCode'=>201,"message"=>'Success']);   
+    //                 } else{
+    //                     return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
+    //                 }
                     
-                } else {
-                    return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Enter Valid User id"]);
-                }  
+    //             } else {
+    //                 return response()->json(["status"=>false,'statusCode'=>403,"message"=>"Enter Valid User id"]);
+    //             }  
 
-            }else{
-                //Not Authorized
-                $msg=__("api_string.not_authorized");
-                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
-            }
+    //         }else{
+    //             //Not Authorized
+    //             $msg=__("api_string.not_authorized");
+    //             return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+    //         }
             
-        } catch (\Throwable $th) {
-            $msg= __("api_string.error");
-            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage(), 'trace'=>$th->getTraceAsString()]);
-        }
-    }
+    //     } catch (\Throwable $th) {
+    //         $msg= __("api_string.error");
+    //         return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+    //     }
+    // }
 
 }

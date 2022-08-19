@@ -138,9 +138,10 @@ class KolTypeController extends Controller
 
     public function getStream(){
         try {
-            $languages = Config('app.stream');
+            $streams = Config('app.stream');
             $msg=__("api_string.stream_list");
-            return response()->json(["status"=>true,'statusCode'=>200,"message"=>$msg,"data"=>(object)$languages]);
+            
+            return response()->json(["status"=>true,'statusCode'=>200,"message"=>$msg,"data"=>$streams]);
         } catch (\Throwable $th) {
             $msg= __("api_string.error");
             return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
