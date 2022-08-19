@@ -18,6 +18,7 @@ use App\Models\InformativeVideo;
 use App\Http\Controllers\MailController;
 use App\Models\KolType;
 use App\Models\Deal;
+use App\Models\DealRequest;
 use App\Models\Bookmark;
 use App\Models\ContactUs;
 use Illuminate\Support\Facades\Auth;
@@ -464,6 +465,26 @@ class UserService
         return $lastAnnouncementId;
     }
 
+    // Request Deal
+    public function requestDeal($request, $userId)
+    {
+        $DealRequest = new DealRequest();
+        $DealRequest->end_user_id = $userId;
+        $DealRequest->kol_user_id = $request['kol_profile_id'];
+        $DealDataSaved = $DealRequest->save();
+        $lastDealId = $DealRequest->id;
+
+        return $lastDealId;
+    }
+
+    // Request Deal
+    public function watchDeal($request, $kolUserId)
+    {
+        $updateResponse = DealRequest::where('id', $request['id'])->where('kol_user_id',$kolUserId)->where('end_user_id',$request['end_user_id'])->update(['status' => 0]);
+
+        return $updateResponse;
+    }
+
     // Add Deal
     public function AddDeal($request, $KolProfile)
     {
@@ -553,7 +574,7 @@ class UserService
         $InformativeVideoData = new InformativeVideo();
         $InformativeVideoData->title = $request['title'];
         $InformativeVideoData->description = $request['description'];
-        $InformativeVideoData->banner = InformativeVideo::makeImageUrl($request['banner']);
+        $InformativeVideoData->banner = $request['banner'];
         $InformativeVideoSaved = $InformativeVideoData->save();
         $lastIvId = $InformativeVideoData->id;
 
@@ -793,7 +814,7 @@ class UserService
     public function UpdateBanner($request, $id)
     {
         $id = ($request['id']) ? $request['id'] : NULL;
-        $Banner = ($request['image']) ? Banner::makeImageUrl($request['image']) : NULL;
+        $Banner = ($request['banner']) ? Banner::makeImageUrl($request['banner']) : NULL;
         $updateData = [];
 
         if ($Banner) {
@@ -894,23 +915,14 @@ class UserService
     public function UpdateInformativeVideo($request, $id)
     {
         $id = ($request['id']) ? $request['id'] : NULL;
-        $Banner = ($request['image']) ? InformativeVideo::makeImageUrl($request['image']) : NULL;
         $updateData = [];
 
-        if ($Banner) {
-            
             $updateData = [
                 'title' => $request['title'],
                 'description' => $request['description'],
-                'banner' => $Banner,
+                'banner' => $request['banner'],
             ];
-
-        } else {
-            $updateData = [
-                'title' => $request['title'],
-                'description' => $request['description'],
-            ];
-        }
+       
 
         $updateResponse = InformativeVideo::where('id', $id)->update($updateData);
 
@@ -954,6 +966,13 @@ class UserService
     public function getDealsById($id){
 
         $Deal = Deal::where('id',$id)->where('status',1)->with('getKolProfile')->get();
+
+        return $Deal;
+    }
+
+    public function getDealsListByKolProfileId($kolProfileId){
+
+        $Deal = Deal::where('kol_profile_id',$kolProfileId)->where('status',1)->with('getKolProfile')->get();
 
         return $Deal;
     }
@@ -1054,9 +1073,9 @@ class UserService
         return $Announcement;
     }
 
-    public function deleteDeal($id){
+    public function deleteDeal($id,$kolProfileId){
 
-        $Deal = Deal::where('id',$id)->delete();
+        $Deal = Deal::where('id',$id)->where('kol_profile_id',$kolProfileId)->delete();
 
         return $Deal;
     }
@@ -1246,7 +1265,7 @@ class UserService
 
     public function DealCount($profileId)
     {
-        return Deal::where('kol_profile_id',$profileId)->count();
+        return Deal::where('kol_profile_id',$profileId)->where('status', 1)->count();
     }
 
     public function checkAddressExistOrNot($userId)

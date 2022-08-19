@@ -26,9 +26,9 @@ class DashboardController extends Controller
             if($roleId == 1){
                 
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'nullable|alpha_num',
-                    'description' => 'nullable|alpha_num',
-                    'banner' => 'required|mimes:png,jpeg,jpg'
+                    'title' => 'nullable|regex:/^[a-z0-9 ]+$/i',
+                    'description' => 'nullable|regex:/^[a-z0-9 ]+$/i',
+                    'banner' => 'required|url'
                 ]);
                 if($valdiation->fails()) {
                     $msg = __("api_string.invalid_fields");
@@ -37,7 +37,7 @@ class DashboardController extends Controller
 
                 $id = $request['id'];    
                 $checkInformativeVideo = $this->userService->checkInformativeVideoExistOrNot($id);
-
+                
                 if($checkInformativeVideo){
                     //update banner
                     $checkProfile = $this->userService->UpdateInformativeVideo($request,$id);
@@ -133,8 +133,8 @@ class DashboardController extends Controller
             if($roleId == 1){
                 
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required|string',
-                    'description' => 'required|string',
+                    'title' => 'required|regex:/^[a-z0-9 ]+$/i',
+                    'description' => 'required|regex:/^[a-z0-9 ]+$/i',
                     'banner' => 'required|mimes:png,jpeg,jpg'
                 ]);
                 if($valdiation->fails()) {

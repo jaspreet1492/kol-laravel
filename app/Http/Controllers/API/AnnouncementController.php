@@ -27,8 +27,8 @@ class AnnouncementController extends Controller
             $profileId= KolProfile::select('id')->where('user_id',$userId)->first();      
             if($roleId == 2){
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required', 
-                    'description' => 'required', 
+                    'title' => 'required|regex:/^[a-z0-9 ]+$/i', 
+                    'description' => 'required|regex:/^[a-z0-9 ]+$/i', 
                     'start_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:', 
                     'end_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:',
                     'image' => 'required|mimes:png,jpeg,jpg', 
