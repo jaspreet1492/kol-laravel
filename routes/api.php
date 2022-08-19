@@ -71,7 +71,7 @@ Route::middleware(['api'])->group(function () {
     Route::post('announcement/active-inactive-status',[AnnouncementController::class,'AnnouncementActiveInactive']);
     Route::post('Chat/send-message',[ChatController::class,'sendMessage']);
     Route::get('Chat/chat-list-users',[ChatController::class,'getChatDataUsers']);
-    Route::get('Chat/chat-list',[ChatController::class,'getChatData']);
+    Route::get('Chat/chat-list',[ChatController::class,'getChatData']); 
     Route::get('Chat/delete-msg',[ChatController::class,'deleteChat']);
     Route::put('Chat/edit-msg',[ChatController::class,'editChat']);
     Route::get('view-all-user',[UserController::class,'displayAllUser']);
