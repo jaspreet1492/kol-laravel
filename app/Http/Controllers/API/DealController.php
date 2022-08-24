@@ -40,12 +40,13 @@ class DealController extends Controller
                 }
                 
                 $id = $request['id']; 
-                $profileId = $KolProfile['id'];   
                 
-                $checkDealCount = $this->userService->DealCount($profileId);
 
     
                     if($KolProfile !=null){
+                        $profileId = $KolProfile['id'];   
+                
+                        $checkDealCount = $this->userService->DealCount($profileId);
                         if($request['id']){
                             // update deal
                             $UpdateDeal = $this->userService->UpdateDeal($request,$KolProfile);

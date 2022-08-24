@@ -13,6 +13,7 @@ use App\Models\Announcement;
 use App\Models\SocialMedia;
 use App\Models\Feedback;
 use App\Models\Banner;
+use App\Models\Order;
 use App\Models\Faq;
 use App\Models\InformativeVideo;
 use App\Http\Controllers\MailController;
@@ -468,18 +469,28 @@ class UserService
     // Place Order
     public function placeOrder($request, $userId)
     {
-        $AnnouncementImg = Announcement::makeImageUrl($request['image']);
-        $AnnouncementData = new Announcement();
-        $AnnouncementData->user_id = $userId;
-        $AnnouncementData->profile_id = $profile_id;
-        $AnnouncementData->title = $request['title'];
-        $AnnouncementData->description = $request['description'];
-        $AnnouncementData->start_date = $request['start_date'];
-        $AnnouncementData->end_date = $request['end_date'];
-        $AnnouncementData->social_platform = $request['social_platform'];
-        $AnnouncementData->image = $AnnouncementImg;
-        $AnnouncementDataSaved = $AnnouncementData->save();
-        $lastAnnouncementId = $AnnouncementData->id;
+        $OrderData = new Order();
+        $OrderData->deal_id = $request['deal_id'];
+        $OrderData->order_id = rand(10000000,99999999);
+        $OrderData->kol_profile_id = $request['kol_profile_id'];
+        $OrderData->end_user_id = $userId;
+        $OrderData->start_date = $request['start_date'];
+        $OrderData->end_date = date('Y-m-d H:i:s',strtotime('+15 days',strtotime(str_replace('/', '-', $request['start_date']))));
+        $tax = [array(
+            "tax_name" => "gst",
+            "tax_percentage" => "18",
+        )];
+        $order_summary = $OrderData->toJson();
+        // $tax = '';
+        echo ($order_summary); die;
+        
+        
+        $OrderData->description = $request['description'];
+        $OrderData->start_date = $request['start_date'];
+        $OrderData->end_date = $request['end_date'];
+        $OrderData->social_platform = $request['social_platform'];
+        $AnnouncementDataSaved = $OrderData->save();
+        $lastAnnouncementId = $OrderData->id;
 
         return $lastAnnouncementId;
     }

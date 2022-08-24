@@ -214,7 +214,7 @@ class KolProfileController extends Controller
             }
             return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=> $kolProfileData]);
         } else{
-            return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=> "Please add profile details first."]);
+            return response()->json(["status"=>true,"statusCode"=>200, "kolProfile"=> 0, "msg" => "Please add profile details first."]);
         }
     }
 

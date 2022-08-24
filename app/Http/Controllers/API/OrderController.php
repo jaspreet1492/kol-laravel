@@ -39,17 +39,16 @@ class OrderController extends Controller
                     return response()->json(["message" => $msg, "statusCode" => 422]);
                 }
                 $checkKolProfile = $this->userService->checkKolProfileIdExistOrNot($request['kol_profile_id']);
-                dd($checkKolProfile);
+                
                 if ($checkKolProfile) {
-                    $checkDeal = $this->userService->checkDealExistOrNot($request['id'], $checkKolProfile['id']);
-                    dd($checkDeal);
+                    $checkDeal = $this->userService->checkDealExistOrNot($request['deal_id'], $request['kol_profile_id']);
                     if ($checkDeal) {
-                        $placeOrder = $this->userService->placeOrder($request,$end_user_id);
+                        $placeOrder = $this->userService->placeOrder($request, $end_user_id);
                     } else {
                         return response()->json(["status" => true, 'statusCode' => 202, "message" => "deal not available"]);
                     }
                 } else {
-                    dd('not available');
+                    return response()->json(["status"=>true,"statusCode"=>200, "kolProfile"=> 0, "msg" => "Please add profile details first."]);
                 }
                 dd('sg');
                 $checkDeal = $this->userService->DealCount($profileId);
