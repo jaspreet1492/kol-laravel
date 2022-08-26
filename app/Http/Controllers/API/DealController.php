@@ -28,8 +28,8 @@ class DealController extends Controller
     
             if($roleId == 2){
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required|regex:/^[a-z0-9 ]+$/i', 
-                    'description' => 'required|regex:/^[a-z0-9 ]+$/i', 
+                    'title' => 'required|regex:/^[a-z0-9 .]+$/i', 
+                    'description' => 'required|regex:/^[a-z0-9 .]+$/i', 
                     'type' => 'required|in:image,video',
                     'total_days' => 'required|integer', 
                     'price' => 'required|integer'

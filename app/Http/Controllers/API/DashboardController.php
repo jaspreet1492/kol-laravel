@@ -26,8 +26,8 @@ class DashboardController extends Controller
             if($roleId == 1){
                 
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'nullable|regex:/^[a-z0-9 ]+$/i',
-                    'description' => 'nullable|regex:/^[a-z0-9 ]+$/i',
+                    'title' => 'nullable|regex:/^[a-z0-9 .]+$/i',
+                    'description' => 'nullable|regex:/^[a-z0-9 .]+$/i',
                     'banner' => 'required|url'
                 ]);
                 if($valdiation->fails()) {
@@ -133,8 +133,8 @@ class DashboardController extends Controller
             if($roleId == 1){
                 
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required|regex:/^[a-z0-9 ]+$/i',
-                    'description' => 'required|regex:/^[a-z0-9 ]+$/i',
+                    'title' => 'required|regex:/^[a-z0-9 .]+$/i',
+                    'description' => 'required|regex:/^[a-z0-9 .]+$/i',
                     'banner' => 'required|mimes:png,jpeg,jpg'
                 ]);
                 if($valdiation->fails()) {
