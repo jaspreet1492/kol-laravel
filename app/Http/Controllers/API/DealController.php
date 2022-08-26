@@ -32,7 +32,7 @@ class DealController extends Controller
                     'description' => 'required|regex:/^[a-z0-9 ]+$/i', 
                     'type' => 'required|in:image,video',
                     'total_days' => 'required|integer', 
-                    'price' => 'required|integer'
+                    'price' => 'required|integer' 
                 ]);
                 if($valdiation->fails()) {
                     $msg = __("api_string.invalid_fields");
