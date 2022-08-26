@@ -411,8 +411,8 @@ class UserService
     public function AddKolProfile($request, $userId)
     {
 
-        $profileImgUrl = KolProfile::makeImageUrl($request['avatar']);
-        $bannerImgUrl = KolProfile::makeImageUrl($request['banner']);
+        $profileImgUrl = ($request['avatar']) ? KolProfile::makeImageUrl($request['avatar']) : NULL;
+        $bannerImgUrl = ($request['banner']) ? KolProfile::makeImageUrl($request['banner']) : NULL;
         $kolProfileData = new KolProfile();
         $kolProfileData->user_id = $userId;
         $kolProfileData->languages = implode(',', $request['languages']);
@@ -433,12 +433,32 @@ class UserService
         
         if ($lastProfileId) {
             foreach ($request['social_media'] as $requestMediaData) {
-    
+                $socialMediaName = $requestMediaData['name'];
+
+                switch ($socialMediaName) {
+                    case "instagram":
+                        $socialMediaIcon = "fa fa-instagram";
+                      break;
+                    case "youtube":
+                        $socialMediaIcon = "fa fa-youtube";
+                      break;
+                    case "tik-tok":
+                        $socialMediaIcon = "fa fa-instagram";
+                      break;
+                    case "facebook":
+                        $socialMediaIcon = "fa fa-facebook";
+                      break;
+                    case "snapchat":
+                        $socialMediaIcon = "fa fa-snapchat-ghost";
+                      break;
+                    default:
+                        $socialMediaIcon = "";
+                  }
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $lastProfileId;
                 $kolSocialData->name = $requestMediaData['name'];
-                $kolSocialData->social_icon = $requestMediaData['social_icon'];
+                $kolSocialData->social_icon = $socialMediaIcon;
                 $kolSocialData->social_user_id = $requestMediaData['social_user_id'];
                 $kolSocialData->followers = $requestMediaData['followers'];
                 $kolSocialMedia = $kolSocialData->save();
@@ -859,7 +879,10 @@ class UserService
     public function UpdateAnnouncement($request, $id)
     {
         $id = ($request['id']) ? $request['id'] : NULL;
-        $AnnouncementImg = ($request['image']) ? Announcement::makeImageUrl($request['image']) : NULL;
+        $AnnouncementImg = "";
+        if($request['image']){
+            $AnnouncementImg = ($request['image']) ? Announcement::makeImageUrl($request['image']) : NULL;
+        }
         $updateData = [];
 
         if ($AnnouncementImg) {
@@ -1299,7 +1322,27 @@ class UserService
                 $socialAccounts = SocialMedia::where('user_id', $userId)->delete();
             }
             foreach ($request['social_media'] as $requestMediaData) {                
-                
+                $socialMediaName = $requestMediaData['name'];
+
+                switch ($socialMediaName) {
+                    case "instagram":
+                        $socialMediaIcon = "fa fa-instagram";
+                      break;
+                    case "youtube":
+                        $socialMediaIcon = "fa fa-youtube";
+                      break;
+                    case "tik-tok":
+                        $socialMediaIcon = "fa fa-instagram";
+                      break;
+                    case "facebook":
+                        $socialMediaIcon = "fa fa-facebook";
+                      break;
+                    case "snapchat":
+                        $socialMediaIcon = "fa fa-snapchat-ghost";
+                      break;
+                    default:
+                        $socialMediaIcon = "";
+                  }
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $profile_id[0];

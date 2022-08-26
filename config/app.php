@@ -288,7 +288,7 @@ return [
         "youtube"=>"youtube",
         "tik-tok"=>"tik-tok",
         "facebook"=>"facebook",
-        "patreon"=>"patreon",
+        "snapchat"=>"snapchat",
     ],
     
 ];

@@ -75,7 +75,6 @@ class KolProfileController extends Controller
                     'personal_email' => 'nullable|email',
                     'social_active'=>'required',
                     'social_media.*.name'=>'required',
-                    'social_media.*.social_icon'=>'required',
                     'social_media.*.social_user_id'=>'required',
                     'social_media.*.followers'=>'required',
                 ]);
@@ -119,6 +118,7 @@ class KolProfileController extends Controller
                
                 if($checkProfile){
                     // update profile
+                    dd($checkProfile);
                     $checkProfile = $this->userService->UpdateKolProfile($request,$userId);
                     $msg=__("api_string.kol_profile_updated");
                     return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
