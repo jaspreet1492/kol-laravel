@@ -83,20 +83,20 @@ class KolProfileController extends Controller
                     $msg = $valdiation->errors()->first();
                     return response()->json(["message"=>$msg, "statusCode"=>422]);
                 }
-                           
+                
                 $langauges = Config('app.languages');
                 $states = Config('app.states');
                 $streams = Config('app.stream');
                 $kolTypes = $this->userService->ViewKolType($request['kol_type']);
-                $countLang = count(array_intersect($langauges,$request['languages']));
+                // $countLang = count(array_intersect($langauges,$request['languages']));
                 $countstream = in_array($request['social_active'],$streams);
                 $countsocial = count(array_intersect($streams,array_column($request['social_media'],'name')));
                 $stateCheck = in_array($request['state'],$states);
 
-                if($countLang !== count($request['languages'])){
-                    $msg=__("api_string.valid_langauge");
-                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
-                }
+                // if($countLang !== count($request['languages'])){
+                //     $msg=__("api_string.valid_langauge");
+                //     return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
+                // }
                 if(!$countstream){
                     $msg=__("api_string.valid_stream");
                     return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);

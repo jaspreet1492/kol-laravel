@@ -28,7 +28,7 @@ class OrderController extends Controller
             $roleId = auth()->user()->role_id;
             $end_user_id = auth()->user()->id;
 
-            if ($roleId == 3) {
+            if ($roleId == 3) {    
                 $valdiation = Validator::make($request->all(), [
                     'deal_id' => 'required|integer',
                     'kol_profile_id' => 'required|integer',
@@ -43,31 +43,16 @@ class OrderController extends Controller
                 if ($checkKolProfile) {
                     $checkDeal = $this->userService->checkDealExistOrNot($request['deal_id'], $request['kol_profile_id']);
                     if ($checkDeal) {
-                        $placeOrder = $this->userService->placeOrder($request, $end_user_id);
+                        $placeOrder = $this->userService->placeOrder($request, $end_user_id,$checkDeal);
+                        $msg=__("api_string.order_placed");
+                        return response()->json(["status"=>true,'statusCode'=>201, "orderPlacedId" => $placeOrder, "message"=>$msg]);
                     } else {
                         return response()->json(["status" => true, 'statusCode' => 202, "message" => "deal not available"]);
                     }
                 } else {
-                    return response()->json(["status"=>true,"statusCode"=>200, "kolProfile"=> 0, "msg" => "Please add profile details first."]);
+                    return response()->json(["status"=>true,"statusCode"=>200, "kolProfile"=> 0, "msg" => "Profile does not exist."]);
                 }
-                dd('sg');
-                $checkDeal = $this->userService->DealCount($profileId);
 
-                if ($request['id']) {
-                    // update deal
-                    $UpdateDeal = $this->userService->UpdateDeal($request, $KolProfile);
-                    $msg = __("api_string.deal_updated");
-                    return response()->json(["status" => true, 'statusCode' => 202, "message" => $msg]);
-                } else {
-                    //add deal
-                    if ($checkDealCount < 5) {
-                        $addDeal = $this->userService->AddDeal($request, $KolProfile);
-                        $msg = __("api_string.deal_added");
-                        return response()->json(["status" => true, 'statusCode' => 201, "message" => $msg]);
-                    } else {
-                        return response()->json(["status" => false, 'statusCode' => 403, "message" => "You cannot create more than 5 Deals."]);
-                    }
-                }
             } else {
                 //Not Authorized
                 $msg = __("api_string.not_authorized");
@@ -76,6 +61,69 @@ class OrderController extends Controller
         } catch (\Throwable $th) {
             $msg = __("api_string.error");
             return response()->json(["statusCode" => 500, "status" => false, "message" => $th->getMessage()]);
+        }
+    }
+
+    public function getOrderSummary(Request $request){
+        try {
+            $roleId = auth()->user()->role_id;
+            $endUserId = auth()->user()->id;
+            if($roleId == 3){
+                $OrderSummary = $this->userService->getOrderSummary($request['id'],$endUserId);
+                return response()->json(["status"=>true,"statusCode"=>200,"orderSummary"=>$OrderSummary]);
+            } else {
+                //Not Authorized
+                $msg = __("api_string.not_authorized");
+                return response()->json(["status" => false, 'statusCode' => 401, "message" => $msg]);
+            }
+
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
+    }
+
+    public function getUserOrderHistory(Request $request){
+        try {
+            $roleId = auth()->user()->role_id;
+            $endUserId = auth()->user()->id;
+            if($roleId == 3){
+                $OrderSummary = $this->userService->getUserOrderHistory($endUserId);
+                return response()->json(["status"=>true,"statusCode"=>200,"orderSummary"=>$OrderSummary]);
+            } else {
+                //Not Authorized
+                $msg = __("api_string.not_authorized");
+                return response()->json(["status" => false, 'statusCode' => 401, "message" => $msg]);
+            }
+
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
+    }
+
+    public function getKolOrderHistory(Request $request){
+        try {
+            $roleId = auth()->user()->role_id;
+            $kolUserId = auth()->user()->id;
+            if($roleId == 2){
+                $kolProfile = $this->userService->checkKolProfileExistOrNot($kolUserId);
+                if($kolProfile){
+                    $OrderSummary = $this->userService->getKolOrderHistory($kolProfile['id']);
+                    return response()->json(["status"=>true,"statusCode"=>200,"orderSummary"=>$OrderSummary]);
+                } else {
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
+                }
+                
+            } else {
+                //Not Authorized
+                $msg = __("api_string.not_authorized");
+                return response()->json(["status" => false, 'statusCode' => 401, "message" => $msg]);
+            }
+
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false]);
         }
     }
 }

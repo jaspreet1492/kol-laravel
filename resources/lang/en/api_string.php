@@ -79,6 +79,7 @@ return [
      'msg_edit'=> 'Message edited successfully.',
      'msg_delete'=> 'Message deleted successfully.',
      'profile_view_updated'=> 'Profile view updated successfully.',
+     'order_placed'=> 'Order has been placed successfully.',
      'bookmark_already_deleted'=> 'Bookmark has been deleted already.',
      'language_list'=> 'Language list has been fetched.',
      'state_list'=> 'State list has been fetched.',

@@ -130,13 +130,16 @@ class DealController extends Controller
     public function getDealsListByLoggedInKolUser(Request $request){
         try {
             $roleId = auth()->user()->role_id;
-    
             if($roleId == 2){
                 $userId = auth()->user()->id;
                 $checkKolProfile = $this->userService->checkKolProfileExistOrNot($userId);
-                $kolProfileId = $request['kol_profile_id'];
-                $deals = $this->userService->getDealsListByKolProfileId($checkKolProfile['id']);
-                return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+                if($checkKolProfile){
+                    $kolProfileId = $request['kol_profile_id'];
+                    $deals = $this->userService->getDealsListByKolProfileId($checkKolProfile['id']);
+                    return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+                } else {
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
+                }
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");

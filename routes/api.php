@@ -58,6 +58,9 @@ Route::middleware(['api'])->group(function () {
     Route::delete('deal/delete',[DealController::class,'deleteDeal']);
     Route::get('deal/my-deals',[DealController::class,'getDealsListByLoggedInKolUser']);
     Route::post('order/place-order',[OrderController::class,'placeOrder']);
+    Route::get('order/get_order_summary',[OrderController::class,'getOrderSummary']);
+    Route::get('order/get_user_order_history',[OrderController::class,'getUserOrderHistory']);
+    Route::get('order/get_kol_order_history',[OrderController::class,'getKolOrderHistory']);
     Route::post('bookmark/add',[BookmarkController::class,'AddBookmark']);
     Route::post('feedback/add',[FeedbackController::class,'AddFeedback']);
     Route::delete('bookmark/delete',[BookmarkController::class,'deleteBookmark']);

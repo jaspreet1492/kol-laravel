@@ -16,4 +16,8 @@ class Deal extends Model
         return $this->belongsTo(KolProfile::class,'kol_profile_id','id');
     }
 
+    public function getUser(){
+        return $this->belongsTo(KolProfile::class,'kol_profile_id','id');
+    }
+
 }
