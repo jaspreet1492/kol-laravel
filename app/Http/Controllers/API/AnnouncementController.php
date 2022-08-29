@@ -27,11 +27,11 @@ class AnnouncementController extends Controller
             $profileId= KolProfile::select('id')->where('user_id',$userId)->first();      
             if($roleId == 2){
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required|regex:/^[a-z0-9 ]+$/i', 
-                    'description' => 'required|regex:/^[a-z0-9 ]+$/i', 
+                    'title' => 'required|regex:/^[a-z0-9 .,]+$/i', 
+                    'description' => 'required|regex:/^[a-z0-9 .,]+$/i', 
                     'start_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:', 
                     'end_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:',
-                    'image' => 'required|mimes:png,jpeg,jpg', 
+                    'image' => 'nullable|mimes:png,jpeg,jpg', 
                     'social_platform' => 'required'
                 ]);
                 if($valdiation->fails()) {
@@ -55,7 +55,7 @@ class AnnouncementController extends Controller
                         $checkProfile = $this->userService->UpdateAnnouncement($request,$id);
                         $msg=__("api_string.announcement_updated");
                         return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
-                    } elseif(!$checkAnnouncement&&$request['id']) {
+                    } elseif(!$checkAnnouncement && $request['id']) {
                         return response()->json(["status"=>true,'statusCode'=>202,"message"=>"Announcement does not exist"]);
                     }else{
                         //add  announcement

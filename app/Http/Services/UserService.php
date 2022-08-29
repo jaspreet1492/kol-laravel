@@ -13,6 +13,7 @@ use App\Models\Announcement;
 use App\Models\SocialMedia;
 use App\Models\Feedback;
 use App\Models\Banner;
+use App\Models\Order;
 use App\Models\Faq;
 use App\Models\InformativeVideo;
 use App\Http\Controllers\MailController;
@@ -410,8 +411,8 @@ class UserService
     public function AddKolProfile($request, $userId)
     {
 
-        $profileImgUrl = KolProfile::makeImageUrl($request['avatar']);
-        $bannerImgUrl = KolProfile::makeImageUrl($request['banner']);
+        $profileImgUrl = ($request['avatar']) ? KolProfile::makeImageUrl($request['avatar']) : NULL;
+        $bannerImgUrl = ($request['banner']) ? KolProfile::makeImageUrl($request['banner']) : NULL;
         $kolProfileData = new KolProfile();
         $kolProfileData->user_id = $userId;
         $kolProfileData->languages = implode(',', $request['languages']);
@@ -432,12 +433,32 @@ class UserService
         
         if ($lastProfileId) {
             foreach ($request['social_media'] as $requestMediaData) {
-    
+                $socialMediaName = $requestMediaData['name'];
+
+                switch ($socialMediaName) {
+                    case "instagram":
+                        $socialMediaIcon = "fa fa-instagram";
+                      break;
+                    case "youtube":
+                        $socialMediaIcon = "fa fa-youtube";
+                      break;
+                    case "tik-tok":
+                        $socialMediaIcon = "fa fa-instagram";
+                      break;
+                    case "facebook":
+                        $socialMediaIcon = "fa fa-facebook";
+                      break;
+                    case "snapchat":
+                        $socialMediaIcon = "fa fa-snapchat-ghost";
+                      break;
+                    default:
+                        $socialMediaIcon = "";
+                  }
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $lastProfileId;
                 $kolSocialData->name = $requestMediaData['name'];
-                $kolSocialData->social_icon = $requestMediaData['social_icon'];
+                $kolSocialData->social_icon = $socialMediaIcon;
                 $kolSocialData->social_user_id = $requestMediaData['social_user_id'];
                 $kolSocialData->followers = $requestMediaData['followers'];
                 $kolSocialMedia = $kolSocialData->save();
@@ -449,7 +470,7 @@ class UserService
     // Add Announcement
     public function AddAnnouncement($request, $userId, $profile_id)
     {
-        $AnnouncementImg = Announcement::makeImageUrl($request['image']);
+        $AnnouncementImg = ($request['image']) ? Announcement::makeImageUrl($request['image']) : NULL;
         $AnnouncementData = new Announcement();
         $AnnouncementData->user_id = $userId;
         $AnnouncementData->profile_id = $profile_id;
@@ -466,22 +487,38 @@ class UserService
     }
 
     // Place Order
-    public function placeOrder($request, $userId)
+    public function placeOrder($request, $userId, $dealData)
     {
-        $AnnouncementImg = Announcement::makeImageUrl($request['image']);
-        $AnnouncementData = new Announcement();
-        $AnnouncementData->user_id = $userId;
-        $AnnouncementData->profile_id = $profile_id;
-        $AnnouncementData->title = $request['title'];
-        $AnnouncementData->description = $request['description'];
-        $AnnouncementData->start_date = $request['start_date'];
-        $AnnouncementData->end_date = $request['end_date'];
-        $AnnouncementData->social_platform = $request['social_platform'];
-        $AnnouncementData->image = $AnnouncementImg;
-        $AnnouncementDataSaved = $AnnouncementData->save();
-        $lastAnnouncementId = $AnnouncementData->id;
+        $OrderData = new Order();
+        $OrderData->deal_id = $request['deal_id'];
+        $OrderData->order_id = rand(10000000,99999999);
+        $OrderData->kol_profile_id = $request['kol_profile_id'];
+        $OrderData->end_user_id = $userId;
+        $OrderData->start_date = $request['start_date'];
+        $OrderData->end_date = date('Y-m-d H:i:s',strtotime($dealData['total_days'].' days',strtotime(str_replace('/', '-', $request['start_date']))));
+        // $tax = [array(
+        //     "tax_name" => "gst",
+        //     "tax_percentage" => "18",
+        //     )]; 
+        // $OrderData->tax = json_encode($tax);
+        $OrderData->tax = '';
+        $order_summary = [
+            "deal_id" => $request['deal_id'],
+            "kol_profile_id" => $request['kol_profile_id'],
+            "deal_title" => $dealData['title'],
+            "description" => $dealData['description'],
+            "type" => $dealData['type'],
+            "total_days" => $dealData['total_days'],
+            "end_user_id" => $userId,
+            "tax_percentage" => "0",
+            "currency" => "INR",
+            "price" => $dealData['price']
+            ];
+        $OrderData->order_summary = json_encode($order_summary);
+        $OrderDataSaved = $OrderData->save();
+        $lastOrderId = $OrderData->id;
 
-        return $lastAnnouncementId;
+        return $lastOrderId;
     }
 
     // Request Deal
@@ -660,6 +697,64 @@ class UserService
         return $response;
     }
 
+    // get OrderSummary
+    public function getOrderSummary($id,$endUserId)
+    {
+        $response = Order::where('id', $id)->where('end_user_id',$endUserId)->get();
+        $orderSummary = [];
+        foreach($response as $order_summary){
+            $orderSummary['id'] = $order_summary['id'];
+            $orderSummary['deal_id'] = $order_summary['deal_id'];
+            $orderSummary['order_id'] = $order_summary['order_id'];
+            $orderSummary['kol_profile_id'] = $order_summary['kol_profile_id'];
+            $orderSummary['end_user_id'] = $order_summary['end_user_id'];
+            $orderSummary['start_date'] = $order_summary['start_date'];
+            $orderSummary['end_date'] = $order_summary['end_date'];
+            $orderSummary['order_summary'] = json_decode($order_summary['order_summary']);
+        }
+        return $orderSummary;
+    }
+
+    // get User Order History
+    public function getUserOrderHistory($endUserId)
+    {
+        $response = Order::where('end_user_id', $endUserId)->get();
+        $orderSummary = [];
+        $i=0;
+        foreach($response as $order_summary){
+            $orderSummary[$i]['id'] = $order_summary['id'];
+            $orderSummary[$i]['deal_id'] = $order_summary['deal_id'];
+            $orderSummary[$i]['order_id'] = $order_summary['order_id'];
+            $orderSummary[$i]['kol_profile_id'] = $order_summary['kol_profile_id'];
+            $orderSummary[$i]['end_user_id'] = $order_summary['end_user_id'];
+            $orderSummary[$i]['start_date'] = $order_summary['start_date'];
+            $orderSummary[$i]['end_date'] = $order_summary['end_date'];
+            $orderSummary[$i]['order_summary'] = json_decode($order_summary['order_summary']);
+            $i++;
+        }
+        return $orderSummary;
+    }
+
+    // get User Order History
+    public function getKolOrderHistory($kolProfileId)
+    {
+        $response = Order::where('kol_profile_id', $kolProfileId)->get();
+        $orderSummary = [];
+        $i=0;
+        foreach($response as $order_summary){
+            $orderSummary[$i]['id'] = $order_summary['id'];
+            $orderSummary[$i]['deal_id'] = $order_summary['deal_id'];
+            $orderSummary[$i]['order_id'] = $order_summary['order_id'];
+            $orderSummary[$i]['kol_profile_id'] = $order_summary['kol_profile_id'];
+            $orderSummary[$i]['end_user_id'] = $order_summary['end_user_id'];
+            $orderSummary[$i]['start_date'] = $order_summary['start_date'];
+            $orderSummary[$i]['end_date'] = $order_summary['end_date'];
+            $orderSummary[$i]['order_summary'] = json_decode($order_summary['order_summary']);
+            $i++;
+        }
+        return $orderSummary;
+    }
+
     // get TotalUsers
     public function getTotalVideos()
     {
@@ -784,7 +879,10 @@ class UserService
     public function UpdateAnnouncement($request, $id)
     {
         $id = ($request['id']) ? $request['id'] : NULL;
-        $AnnouncementImg = ($request['image']) ? Announcement::makeImageUrl($request['image']) : NULL;
+        $AnnouncementImg = "";
+        if($request['image']){
+            $AnnouncementImg = ($request['image']) ? Announcement::makeImageUrl($request['image']) : NULL;
+        }
         $updateData = [];
 
         if ($AnnouncementImg) {
@@ -1144,7 +1242,7 @@ class UserService
     public function UpdateKolProfile($request, $userId)
     {
 
-        $id = ($request['id']) ? $request['id'] : NULL;
+        // $id = ($request['id']) ? $request['id'] : NULL;
         $profileImgUrl = ($request['avatar']) ? KolProfile::makeImageUrl($request['avatar']) : NULL;
         $bannerImgUrl = ($request['banner']) ? KolProfile::makeImageUrl($request['banner']) : NULL;
         $updateData = [];
@@ -1177,7 +1275,7 @@ class UserService
                 'zip_code' => $request['zip_code'],
                 'city' => $request['city'],
                 'total_viewer' => $request['total_viewer'],
-                'social_active' => implode(',', $request['social_active']),
+                'social_active' => $request['social_active'],
                 'video_links' => implode(',', $request['video_links']),
                 'tags' => implode(',', $request['tags']),
             ];
@@ -1194,7 +1292,7 @@ class UserService
                 'zip_code' => $request['zip_code'],
                 'city' => $request['city'],
                 'total_viewer' => $request['total_viewer'],
-                'social_active' => implode(',', $request['social_active']),
+                'social_active' => $request['social_active'],
                 'video_links' => implode(',', $request['video_links']),
                 'tags' => implode(',', $request['tags']),
             ];
@@ -1208,7 +1306,7 @@ class UserService
                 'zip_code' => $request['zip_code'],
                 'city' => $request['city'],
                 'total_viewer' => $request['total_viewer'],
-                'social_active' => implode(',', $request['social_active']),
+                'social_active' => $request['social_active'],
                 'video_links' => implode(',', $request['video_links']),
                 'tags' => implode(',', $request['tags']),
             ];
@@ -1224,7 +1322,27 @@ class UserService
                 $socialAccounts = SocialMedia::where('user_id', $userId)->delete();
             }
             foreach ($request['social_media'] as $requestMediaData) {                
-                
+                $socialMediaName = $requestMediaData['name'];
+
+                switch ($socialMediaName) {
+                    case "instagram":
+                        $socialMediaIcon = "fa fa-instagram";
+                      break;
+                    case "youtube":
+                        $socialMediaIcon = "fa fa-youtube";
+                      break;
+                    case "tik-tok":
+                        $socialMediaIcon = "fa fa-instagram";
+                      break;
+                    case "facebook":
+                        $socialMediaIcon = "fa fa-facebook";
+                      break;
+                    case "snapchat":
+                        $socialMediaIcon = "fa fa-snapchat-ghost";
+                      break;
+                    default:
+                        $socialMediaIcon = "";
+                  }
                 $kolSocialData = new SocialMedia();
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $profile_id[0];
@@ -1257,7 +1375,54 @@ class UserService
     public function checkKolProfileExistOrNot($userId)
     {
 
-        return KolProfile::where('user_id', $userId)->with('getUser')->with('getSocialMedia')->first();
+        $profileData =  KolProfile::where('user_id', $userId)->with('getUser')->with('getDeal')->with('getSocialMedia')->first();
+        $kolProfileDetails = [];
+
+        if($profileData){
+        $kolTypeName = $this->checkKolTypeExistOrNot($profileData['kol_type']);
+        $kolProfileDetails['id'] = $profileData['id'];
+        $kolProfileDetails['user_id'] = $profileData['user_id'];
+        $kolProfileDetails['bio'] = $profileData['bio'];
+        $kolProfileDetails['languages'] = $profileData['languages'];
+        $kolProfileDetails['avatar'] = $profileData['avatar'];
+        $kolProfileDetails['personal_email'] = $profileData['personal_email'];
+        $kolProfileDetails['kol_type'] = $kolTypeName['name'];
+        $kolProfileDetails['state'] = $profileData['state'];
+        $kolProfileDetails['zip_code'] = $profileData['zip_code'];
+        $kolProfileDetails['city'] = $profileData['city'];
+        $kolProfileDetails['total_viewer'] = $profileData['total_viewer'];
+        $kolProfileDetails['banner'] = $profileData['banner'];
+        $kolProfileDetails['social_active'] = $profileData['social_active'];
+        $socialMediaName = $profileData['social_active'];
+        switch ($socialMediaName) {
+            case "instagram":
+                $socialMediaIcon = "fa fa-instagram";
+                break;
+                case "youtube":
+                    $socialMediaIcon = "fa fa-youtube";
+                    break;
+                case "tik-tok":
+                    $socialMediaIcon = "fa fa-instagram";
+                    break;
+                case "facebook":
+                    $socialMediaIcon = "fa fa-facebook";
+                    break;
+                case "snapchat":
+                    $socialMediaIcon = "fa fa-snapchat-ghost";
+                    break;
+                default:
+                $socialMediaIcon = "";
+            }
+        $kolProfileDetails['social_active_icon'] = $socialMediaIcon;
+        $kolProfileDetails['video_links'] = $profileData['video_links'];
+        $kolProfileDetails['social_active'] = $profileData['social_active'];
+        $kolProfileDetails['tags'] = $profileData['tags'];
+        $kolProfileDetails['get_user'] = $profileData['getUser'];
+        $kolProfileDetails['get_social_media'] = $profileData['getSocialMedia'];
+        $kolProfileDetails['get_deal'] = $profileData['getDeal'];
+        }
+        
+        return $kolProfileDetails;
     }
 
     public function checkKolProfileIdExistOrNot($profileId)
@@ -1319,7 +1484,7 @@ class UserService
 
     public function ViewKolProfileById($id)
     {
-        $profileData = KolProfile::where('kol_profiles.id', $id)->with('getUser')->with('getSocialMedia')->get();
+        $profileData = KolProfile::where('kol_profiles.id', $id)->with('getUser')->with('getSocialMedia')->with('getDeal')->get();
         $latestAnnouncement = Announcement::where('profile_id',$id)->where('status',1)->orderBy('id','Desc')->first();
 
         if($profileData->isEmpty()){
@@ -1328,7 +1493,7 @@ class UserService
 
         $kolProfileData = $profileData;
         $kolProfileData[0]['announcement'] = $latestAnnouncement;
-
+        
         return $kolProfileData;
     }
     
@@ -1409,6 +1574,27 @@ class UserService
             $listProfiles[$i]['total_viewer'] = $profileList['total_viewer'];
             $listProfiles[$i]['banner'] = $profileList['banner'];
             $listProfiles[$i]['social_active'] = $profileList['social_active'];
+            $socialMediaName = $profileList['social_active'];
+            switch ($socialMediaName) {
+                case "instagram":
+                    $socialMediaIcon = "fa fa-instagram";
+                    break;
+                case "youtube":
+                    $socialMediaIcon = "fa fa-youtube";
+                    break;
+                case "tik-tok":
+                    $socialMediaIcon = "fa fa-instagram";
+                    break;
+                case "facebook":
+                    $socialMediaIcon = "fa fa-facebook";
+                    break;
+                case "snapchat":
+                    $socialMediaIcon = "fa fa-snapchat-ghost";
+                    break;
+                default:
+                    $socialMediaIcon = "";
+                }
+            $listProfiles[$i]['social_active_icon'] = $socialMediaIcon;
             $listProfiles[$i]['video_links'] = $profileList['video_links'];
             $listProfiles[$i]['tags'] = $profileList['tags'];
             $listProfiles[$i]['user_id'] = $profileList['getUser']['id'];
@@ -1467,6 +1653,27 @@ class UserService
             $listProfiles[$i]['total_viewer'] = $profileList['total_viewer'];
             $listProfiles[$i]['banner'] = $profileList['banner'];
             $listProfiles[$i]['social_active'] = $profileList['social_active'];
+            $socialMediaName = $profileList['social_active'];
+            switch ($socialMediaName) {
+                case "instagram":
+                    $socialMediaIcon = "fa fa-instagram";
+                    break;
+                case "youtube":
+                    $socialMediaIcon = "fa fa-youtube";
+                    break;
+                case "tik-tok":
+                    $socialMediaIcon = "fa fa-instagram";
+                    break;
+                case "facebook":
+                    $socialMediaIcon = "fa fa-facebook";
+                    break;
+                case "snapchat":
+                    $socialMediaIcon = "fa fa-snapchat-ghost";
+                    break;
+                default:
+                    $socialMediaIcon = "";
+                }
+            $listProfiles[$i]['social_active_icon'] = $socialMediaIcon;
             $listProfiles[$i]['video_links'] = $profileList['video_links'];
             $listProfiles[$i]['tags'] = $profileList['tags'];
             $listProfiles[$i]['user_id'] = $profileList['getUser']['id'];
@@ -1476,15 +1683,18 @@ class UserService
             $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
             $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
             $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
-            $listProfiles[$i]['Address']['address'] = $profileList['getAddress']['address'];
-            $listProfiles[$i]['Address']['landmark'] = $profileList['getAddress']['landmark'];
-            $listProfiles[$i]['Address']['zip'] = $profileList['getAddress']['zip'];
-            $listProfiles[$i]['Address']['city'] = $profileList['getAddress']['city'];
-            $listProfiles[$i]['Address']['state'] = $profileList['getAddress']['state'];
-            $listProfiles[$i]['Address']['country'] = $profileList['getAddress']['country'];
+            if($profileList['getAddress']){
+                $listProfiles[$i]['Address']['address'] = $profileList['getAddress']['address'];
+                $listProfiles[$i]['Address']['landmark'] = $profileList['getAddress']['landmark'];
+                $listProfiles[$i]['Address']['zip'] = $profileList['getAddress']['zip'];
+                $listProfiles[$i]['Address']['city'] = $profileList['getAddress']['city'];
+                $listProfiles[$i]['Address']['state'] = $profileList['getAddress']['state'];
+                $listProfiles[$i]['Address']['country'] = $profileList['getAddress']['country'];
+            }
+            
             $listProfiles[$i]['bookmark'] = ($profileList['getBookmark']==null)? false : true;
 
-            
+            if($profileList['getSocialMedia']){
             $j = 0;
             foreach($profileList['getSocialMedia'] as $socialAccounts){
                 $listSocialMedia[$j]['social_media_id'] = $socialAccounts['id'];
@@ -1494,15 +1704,18 @@ class UserService
                 $listSocialMedia[$j]['followers'] = $socialAccounts['followers'];
                 $j++;
             }
-            $k=0;
-            
-            foreach($profileList['getFeedbacks'] as $feedbacks){
-                $listFeedback[$k]['feedback_id'] = $feedbacks['id'];
-                $listFeedback[$k]['end_user_id'] = $feedbacks['end_user_id'];
-                $listFeedback[$k]['kol_profile_id'] = $feedbacks['kol_profile_id'];
-                $listFeedback[$k]['comment'] = $feedbacks['comment'];
-                $listFeedback[$k]['rating'] = $feedbacks['rating'];
-                $k++;
+            }
+
+            if($profileList['getFeedbacks']){
+                $k=0;
+                foreach($profileList['getFeedbacks'] as $feedbacks){
+                    $listFeedback[$k]['feedback_id'] = $feedbacks['id'];
+                    $listFeedback[$k]['end_user_id'] = $feedbacks['end_user_id'];
+                    $listFeedback[$k]['kol_profile_id'] = $feedbacks['kol_profile_id'];
+                    $listFeedback[$k]['comment'] = $feedbacks['comment'];
+                    $listFeedback[$k]['rating'] = $feedbacks['rating'];
+                    $k++;
+                }
             }
          
             $listProfiles[$i]['SocialMedia'] = $listSocialMedia;

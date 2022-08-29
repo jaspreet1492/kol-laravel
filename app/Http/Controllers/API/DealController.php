@@ -28,11 +28,11 @@ class DealController extends Controller
     
             if($roleId == 2){
                 $valdiation = Validator::make($request->all(),[
-                    'title' => 'required|regex:/^[a-z0-9 ]+$/i', 
-                    'description' => 'required|regex:/^[a-z0-9 ]+$/i', 
+                    'title' => 'required|regex:/^[a-z0-9 .,]+$/i', 
+                    'description' => 'required|regex:/^[a-z0-9 .,]+$/i', 
                     'type' => 'required|in:image,video',
                     'total_days' => 'required|integer', 
-                    'price' => 'required|integer'
+                    'price' => 'required|integer' 
                 ]);
                 if($valdiation->fails()) {
                     $msg = __("api_string.invalid_fields");
@@ -40,12 +40,13 @@ class DealController extends Controller
                 }
                 
                 $id = $request['id']; 
-                $profileId = $KolProfile['id'];   
                 
-                $checkDealCount = $this->userService->DealCount($profileId);
 
     
                     if($KolProfile !=null){
+                        $profileId = $KolProfile['id'];   
+                
+                        $checkDealCount = $this->userService->DealCount($profileId);
                         if($request['id']){
                             // update deal
                             $UpdateDeal = $this->userService->UpdateDeal($request,$KolProfile);
@@ -129,13 +130,16 @@ class DealController extends Controller
     public function getDealsListByLoggedInKolUser(Request $request){
         try {
             $roleId = auth()->user()->role_id;
-    
             if($roleId == 2){
                 $userId = auth()->user()->id;
                 $checkKolProfile = $this->userService->checkKolProfileExistOrNot($userId);
-                $kolProfileId = $request['kol_profile_id'];
-                $deals = $this->userService->getDealsListByKolProfileId($checkKolProfile['id']);
-                return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+                if($checkKolProfile){
+                    $kolProfileId = $request['kol_profile_id'];
+                    $deals = $this->userService->getDealsListByKolProfileId($checkKolProfile['id']);
+                    return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+                } else {
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
+                }
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");
