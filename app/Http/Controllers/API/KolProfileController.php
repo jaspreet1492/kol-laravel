@@ -118,7 +118,6 @@ class KolProfileController extends Controller
                
                 if($checkProfile){
                     // update profile
-                    dd($checkProfile);
                     $checkProfile = $this->userService->UpdateKolProfile($request,$userId);
                     $msg=__("api_string.kol_profile_updated");
                     return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
