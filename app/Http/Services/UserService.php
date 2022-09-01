@@ -443,7 +443,7 @@ class UserService
                         $socialMediaIcon = "fa fa-youtube";
                       break;
                     case "tik-tok":
-                        $socialMediaIcon = "fa fa-instagram";
+                        $socialMediaIcon = "bi bi-tiktok";
                       break;
                     case "facebook":
                         $socialMediaIcon = "fa fa-facebook";
@@ -1347,7 +1347,7 @@ class UserService
                 $kolSocialData->user_id = $userId;
                 $kolSocialData->profile_id = $profile_id[0];
                 $kolSocialData->name = $requestMediaData['name'];
-                $kolSocialData->social_icon = $requestMediaData['social_icon'];
+                $kolSocialData->social_icon =  $socialMediaIcon;
                 $kolSocialData->social_user_id = $requestMediaData['social_user_id'];
                 $kolSocialData->followers = $requestMediaData['followers'];
                 $kolSocialMedia = $kolSocialData->save();
@@ -1683,6 +1683,7 @@ class UserService
             $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
             $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
             $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
+
             if($profileList['getAddress']){
                 $listProfiles[$i]['Address']['address'] = $profileList['getAddress']['address'];
                 $listProfiles[$i]['Address']['landmark'] = $profileList['getAddress']['landmark'];
@@ -1714,6 +1715,8 @@ class UserService
                     $listFeedback[$k]['kol_profile_id'] = $feedbacks['kol_profile_id'];
                     $listFeedback[$k]['comment'] = $feedbacks['comment'];
                     $listFeedback[$k]['rating'] = $feedbacks['rating'];
+                    $userImage = User::where('id',$feedbacks['end_user_id'])->first();
+                    $listFeedback[$k]['end_user_image'] = $userImage['avatar'];
                     $k++;
                 }
             }
@@ -1723,6 +1726,7 @@ class UserService
 
             $i++;
         }
+        
         return $listProfiles;
     }
 

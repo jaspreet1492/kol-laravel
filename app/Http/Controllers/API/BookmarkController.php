@@ -81,6 +81,10 @@ class BookmarkController extends Controller
                     $msg=__("api_string.bookmark_already_deleted");
                 }
                 return response()->json(["status"=>true,'statusCode'=>$statusCode,"message"=>$msg]);
+            }else{
+                //Not Author ized
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
         } catch (\Throwable $th) {
             $msg= __("api_string.error");
@@ -95,6 +99,10 @@ class BookmarkController extends Controller
             if($roleId == 3){
                 $BookmarkList = $this->userService->getBookmarks($userId);
                 return response()->json(["status"=>true,"statusCode"=>200,"bookmarks"=>$BookmarkList]);
+            }else{
+                //Not Author ized
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
             }
 
         } catch (\Throwable $th) {
