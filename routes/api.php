@@ -111,6 +111,7 @@ Route::middleware(['api'])->group(function () {
   Route::get('kol-profile/featured-list',[KolProfileController::class,'getFeaturedProfileList']);
   Route::get('deal/view-by-id',[DealController::class,'getDealsById']);
   Route::get('deal/list-deals',[DealController::class,'getDealsListByKolProfileId']);
+  Route::get('deal/list-kol-deals',[DealController::class,'getDealsListByKolUserId']);
 
  
 

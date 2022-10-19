@@ -197,6 +197,7 @@ class AuthController extends Controller
                     if($token){
                         $response = [];
                         $response['token'] = $token;
+                        $response['logged_in_user'] = $checkEmail['id'];
                         $response['user_name'] = $checkEmail['name'];
                         $response['email'] = $checkEmail['email'];
                         $response['role_id'] = $checkEmail['role_id'];
@@ -303,6 +304,7 @@ class AuthController extends Controller
                     if($checkEmail['is_varified'] == 1){
                         $response = [];
                         $response['token'] = $checkPass;
+                        $response['logged_in_user'] = $checkEmail['id'];
                         $response['user_name'] = $checkEmail['name'];
                         $response['email'] = $checkEmail['email'];
                         $response['role_id'] = $checkEmail['role_id'];
@@ -317,12 +319,12 @@ class AuthController extends Controller
                 }else{
                        // incorrect password
                     $msg= __("api_string.incorrect_password");
-                    return response()->json(["statusCode"=>401,"status"=>false,"message"=>$msg]);
+                    return response()->json(["statusCode"=>403,"status"=>false,"message"=>$msg]);
                 }
             }else{
                 // incorrect email id
                 $msg= __("api_string.email_exist");
-                return response()->json(["statusCode"=>401,"status"=>false,"message"=>$msg]);
+                return response()->json(["statusCode"=>404,"status"=>false,"message"=>$msg]);
             }
         } catch (\Throwable $th) {
             $msg= __("api_string.error");

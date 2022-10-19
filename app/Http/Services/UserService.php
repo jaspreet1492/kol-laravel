@@ -1513,8 +1513,9 @@ class UserService
             $UserIdByQuery = $this->searchUserByName($request['search']);
             
         }
-        
-        $kolProfiles = KolProfile::with('getUser','getSocialMedia', 'getBookmark','getDeal')
+        $loggedInUser = Auth::user()->id;
+
+        $kolProfiles = KolProfile::with('getUser','getSocialMedia','getDeal')
         ->where(function($query) use ($request,$UserIdByQuery, $sortBYQuery, $sortBY, $socialMedia){
             if(isset($request['languages']) && !empty($request['languages'])){
                 $query->whereRaw('Find_IN_SET(?, languages)', [$request['languages']]);
@@ -1535,7 +1536,7 @@ class UserService
             $query->where('role_id', '=', 2); // '=' is optional
         })->skip(($pageNo - 1) * $limit)->take($limit)->get();
 
-        $kolProfilesCount = KolProfile::with('getUser','getSocialMedia', 'getBookmark','getDeal')
+        $kolProfilesCount = KolProfile::with('getUser','getSocialMedia','getDeal')
         ->where(function($query) use ($request,$UserIdByQuery){
             if(isset($request['languages']) && !empty($request['languages'])){
                 $query->whereRaw('Find_IN_SET(?, languages)', [$request['languages']]);
@@ -1563,6 +1564,8 @@ class UserService
         
         foreach($kolProfiles as $key => $profileList){
             $listProfiles[$i]['profile_id'] = $profileList['id'];
+            $kolBookmarked = Bookmark::where('end_user_id',$loggedInUser)->where('kol_profile_id',$profileList['id'])->first();
+            $listProfiles[$i]['bookmark'] = ($kolBookmarked==null)? false : true;
             $listProfiles[$i]['languages'] = $profileList['languages'];
             $listProfiles[$i]['bio'] = $profileList['bio'];
             $listProfiles[$i]['avatar'] = $profileList['avatar'];
@@ -1605,7 +1608,7 @@ class UserService
             $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
             $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
             $listProfiles[$i]['deals'] = $profileList['getDeal'];
-            $listProfiles[$i]['bookmark'] = ($profileList['getBookmark']==null)? false : true;
+            // $listProfiles[$i]['bookmark'] = ($profileList['getBookmark']==null)? false : true;
             
             $j = 0;
             foreach($profileList['getSocialMedia'] as $socialAccounts){

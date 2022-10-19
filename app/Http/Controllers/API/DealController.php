@@ -110,11 +110,42 @@ class DealController extends Controller
         
         try {
             $userId = auth()->user();
+            $roleId = auth()->user()->role_id;
 
             if($userId){
                 $kolProfileId = $request['kol_profile_id'];
                 $deals = $this->userService->getDealsListByKolProfileId($kolProfileId);
                 return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+            }else{
+                //Not Authorized
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+            }
+            
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
+    }
+
+    public function getDealsListByKolUserId(Request $request){
+        
+        try {
+            $userId = auth()->user();
+
+            if($userId){
+                $kolUserId = $request['kol_user_id'];
+                $checkKolProfile = $this->userService->checkKolProfileExistOrNot($kolUserId);
+                if($checkKolProfile){
+                    $deals = $this->userService->getDealsListByKolProfileId($checkKolProfile['id']);
+                    if($deals){
+                        return response()->json(["status"=>true,"statusCode"=>200,"deals"=>$deals]);
+                    } else {
+                        return response()->json(["status"=>true,'statusCode'=>201,"deals"=>[]]);
+                    }
+                } else {
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Kol profile does not exist"]);
+                }
             }else{
                 //Not Authorized
                 $msg=__("api_string.not_authorized");

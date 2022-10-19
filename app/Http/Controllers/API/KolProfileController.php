@@ -189,12 +189,14 @@ class KolProfileController extends Controller
     public function getKolProfileById(Request $request){
         
         $endUserId = auth()->user()->id;
+
         $kolProfileData = $this->userService->ViewKolProfileById($request['id']);
         $checkBookmark = $this->userService->checkBookmarkExistOrNot($endUserId,$request['id']);
+        // dd($checkBookmark);
         if(empty($checkBookmark)){
-            $kolProfileData[0]['Bookmark']= 'false';
+            $kolProfileData[0]['bookmark']= false;
         }else {
-            $kolProfileData[0]['Bookmark'] = 'true';
+            $kolProfileData[0]['bookmark'] = true;
         }
         return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=> $kolProfileData]);
     }
@@ -207,9 +209,9 @@ class KolProfileController extends Controller
             $checkBookmark = $this->userService->checkBookmarkExistOrNot($endUserId,$kolProfileData['id']);
             
             if(empty($checkBookmark)){
-                $kolProfileData['Bookmark']= 'false';
+                $kolProfileData[0]['bookmark']= false;
             }else {
-                $kolProfileData['Bookmark'] = 'true';
+                $kolProfileData[0]['bookmark'] = true;
             }
             return response()->json(["status"=>true,"statusCode"=>200,"kolProfile"=> $kolProfileData]);
         } else{
@@ -218,8 +220,19 @@ class KolProfileController extends Controller
     }
 
     public function getProfileList(Request $request){
-        $kolProfiles = $this->userService->KolProfileList($request);
-        
+        try {
+            $roleId = auth()->user()->role_id;
+            if($roleId == 2 || $roleId ==3){
+                $kolProfiles = $this->userService->KolProfileList($request);
+            }else{
+                $msg=__("api_string.not_authorized");
+                return response()->json(["status"=>false,'statusCode'=>401,"message"=>$msg]);
+            }
+            
+        } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
 
         return response()->json(["status"=>true,"statusCode"=>200,"kolTotalProfiles"=>$kolProfiles['total'],"kolProfiles"=>$kolProfiles['data']]);
     }

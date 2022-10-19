@@ -41,10 +41,13 @@ class User extends Authenticatable implements JWTSubject
 
     public static function makeImageUrl($file)
     {
-        
         $uploadFolder = 'user';
+        $foldername = public_path() . '/uploads/'.$uploadFolder;
+        if (!file_exists($foldername)) {
+            mkdir($foldername, 0777);
+        }        
         $name = preg_replace("/[^a-z0-9\._]+/", "-", strtolower(time() . rand(1, 9999) . '.' . $file->getClientOriginalName()));
-        if ($file->move(public_path() . '/uploads/'.$uploadFolder, str_replace(" ", "", $name))) {
+        if ($file->move($foldername, str_replace(" ", "", $name))) {
             return '/uploads/'.$uploadFolder.'/' .$name;
         }
     }
