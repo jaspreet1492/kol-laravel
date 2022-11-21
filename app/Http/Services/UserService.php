@@ -443,7 +443,7 @@ class UserService
                         $socialMediaIcon = "fa fa-youtube";
                       break;
                     case "tik-tok":
-                        $socialMediaIcon = "bi bi-tiktok";
+                        $socialMediaIcon = "fa-brands fa-tiktok";
                       break;
                     case "facebook":
                         $socialMediaIcon = "fa fa-facebook";
@@ -1332,7 +1332,7 @@ class UserService
                         $socialMediaIcon = "fa fa-youtube";
                       break;
                     case "tik-tok":
-                        $socialMediaIcon = "fa fa-instagram";
+                        $socialMediaIcon = "fa-brands fa-tiktok";
                       break;
                     case "facebook":
                         $socialMediaIcon = "fa fa-facebook";
@@ -1402,7 +1402,7 @@ class UserService
                     $socialMediaIcon = "fa fa-youtube";
                     break;
                 case "tik-tok":
-                    $socialMediaIcon = "fa fa-instagram";
+                    $socialMediaIcon = "fa-brands fa-tiktok";
                     break;
                 case "facebook":
                     $socialMediaIcon = "fa fa-facebook";
@@ -1586,7 +1586,7 @@ class UserService
                     $socialMediaIcon = "fa fa-youtube";
                     break;
                 case "tik-tok":
-                    $socialMediaIcon = "fa fa-instagram";
+                    $socialMediaIcon = "fa-brands fa-tiktok";
                     break;
                 case "facebook":
                     $socialMediaIcon = "fa fa-facebook";
@@ -1665,7 +1665,7 @@ class UserService
                     $socialMediaIcon = "fa fa-youtube";
                     break;
                 case "tik-tok":
-                    $socialMediaIcon = "fa fa-instagram";
+                    $socialMediaIcon = "fa-brands fa-tiktok";
                     break;
                 case "facebook":
                     $socialMediaIcon = "fa fa-facebook";

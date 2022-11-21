@@ -266,7 +266,7 @@ class AuthController extends Controller
                                 $response['email'] = $checkEmail['email'];
                                 $response['role_id'] = $request['role_id'];
                                 $msg =  __("api_string.user_role_token");
-                                return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);
+                                return response()->json(["status"=>true,'statusCode'=>200,"message"=>$msg,"data"=>$response]);
                             }else{
                                 $msg = __("api_string.role_updated_status");
                                 return response()->json(['statusCode'=>204,'Status'=>false,'msg'=>$msg]);
@@ -287,7 +287,7 @@ class AuthController extends Controller
         try {
             $valdiation = Validator::make($request->all(), [
                 'email' => 'required|email',
-                'password' => 'required|string|min:6',
+                'password' => 'required',
             ]);
             if($valdiation->fails()) {
                 $msg = __("api_string.invalid_fields");
