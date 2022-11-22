@@ -298,7 +298,7 @@ class AuthController extends Controller
             $checkEmail = $this->userService->checkEmail($request['email']);
             if($checkEmail){
                 //check password 
-                $checkPass = $this->userService->userLogin($request,$checkEmail['password'],$checkEmail['id']);
+                $checkPass = $this->userService->userLogin($request,$checkEmail['password'],$checkEmail['id'], $checkEmail);
                 if($checkPass){
                     //check verified
                     if($checkEmail['is_varified'] == 1){

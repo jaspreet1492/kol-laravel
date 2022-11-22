@@ -317,18 +317,27 @@ class UserService
         return User::where('id', $userId)->with('getAddress')->first();
     }
 
-    public function userLogin($request, $oldOtp, $userId)
+    public function userLogin($request, $oldOtp, $userId, $checkEmail)
     {
         if (!Hash::check($request['password'], $oldOtp)) {
             return false;
         } else {
-            $input = $request->only('email', 'password');
-            $token = JWTAuth::attempt($input);
-            $saveToken = new UserTokens();
-            $saveToken->user_id = $userId;
-            $saveToken->token = $token;
-            $saved = $saveToken->save();
-            return $token;
+
+            $customClaims = ['name' => $checkEmail['name'], 'email' => $checkEmail['email'], 'role_id' => $checkEmail['role_id'], 'firebase_token' => $checkEmail['firebase_token']];
+            $input = [];
+            $input['email'] = $checkEmail['email'];
+            $input['password'] = $request['password'];
+            // $input = $request->only('email', 'password');
+            $token = JWTAuth::claims($customClaims)->attempt($input);
+            if ($token) {
+                $saveToken = new UserTokens();
+                $saveToken->user_id = $checkEmail['id'];
+                $saveToken->token = $token;
+                $saveToken->save();
+                return $token;
+            } else {
+                return false;
+            }
         }
     }
 
@@ -437,19 +446,19 @@ class UserService
 
                 switch ($socialMediaName) {
                     case "instagram":
-                        $socialMediaIcon = "fa fa-instagram";
+                        $socialMediaIcon = "fa-brands fa-instagram";
                       break;
                     case "youtube":
-                        $socialMediaIcon = "fa fa-youtube";
+                        $socialMediaIcon = "fa-brands fa-youtube";
                       break;
                     case "tik-tok":
                         $socialMediaIcon = "fa-brands fa-tiktok";
                       break;
                     case "facebook":
-                        $socialMediaIcon = "fa fa-facebook";
+                        $socialMediaIcon = "fa-brands fa-facebook";
                       break;
                     case "snapchat":
-                        $socialMediaIcon = "fa fa-snapchat-ghost";
+                        $socialMediaIcon = "fa-brands fa-snapchat-ghost";
                       break;
                     default:
                         $socialMediaIcon = "";
@@ -1326,19 +1335,19 @@ class UserService
 
                 switch ($socialMediaName) {
                     case "instagram":
-                        $socialMediaIcon = "fa fa-instagram";
+                        $socialMediaIcon = "fa-brands fa-instagram";
                       break;
                     case "youtube":
-                        $socialMediaIcon = "fa fa-youtube";
+                        $socialMediaIcon = "fa-brands fa-youtube";
                       break;
                     case "tik-tok":
                         $socialMediaIcon = "fa-brands fa-tiktok";
                       break;
                     case "facebook":
-                        $socialMediaIcon = "fa fa-facebook";
+                        $socialMediaIcon = "fa-brands fa-facebook";
                       break;
                     case "snapchat":
-                        $socialMediaIcon = "fa fa-snapchat-ghost";
+                        $socialMediaIcon = "fa-brands fa-snapchat-ghost";
                       break;
                     default:
                         $socialMediaIcon = "";
@@ -1396,19 +1405,19 @@ class UserService
         $socialMediaName = $profileData['social_active'];
         switch ($socialMediaName) {
             case "instagram":
-                $socialMediaIcon = "fa fa-instagram";
+                $socialMediaIcon = "fa-brands fa-instagram";
                 break;
                 case "youtube":
-                    $socialMediaIcon = "fa fa-youtube";
+                    $socialMediaIcon = "fa-brands fa-youtube";
                     break;
                 case "tik-tok":
                     $socialMediaIcon = "fa-brands fa-tiktok";
                     break;
                 case "facebook":
-                    $socialMediaIcon = "fa fa-facebook";
+                    $socialMediaIcon = "fa-brands fa-facebook";
                     break;
                 case "snapchat":
-                    $socialMediaIcon = "fa fa-snapchat-ghost";
+                    $socialMediaIcon = "fa-brands fa-snapchat-ghost";
                     break;
                 default:
                 $socialMediaIcon = "";
@@ -1580,19 +1589,19 @@ class UserService
             $socialMediaName = $profileList['social_active'];
             switch ($socialMediaName) {
                 case "instagram":
-                    $socialMediaIcon = "fa fa-instagram";
+                    $socialMediaIcon = "fa-brands fa-instagram";
                     break;
                 case "youtube":
-                    $socialMediaIcon = "fa fa-youtube";
+                    $socialMediaIcon = "fa-brands fa-youtube";
                     break;
                 case "tik-tok":
                     $socialMediaIcon = "fa-brands fa-tiktok";
                     break;
                 case "facebook":
-                    $socialMediaIcon = "fa fa-facebook";
+                    $socialMediaIcon = "fa-brands fa-facebook";
                     break;
                 case "snapchat":
-                    $socialMediaIcon = "fa fa-snapchat-ghost";
+                    $socialMediaIcon = "fa-brands fa-snapchat-ghost";
                     break;
                 default:
                     $socialMediaIcon = "";
@@ -1641,7 +1650,8 @@ class UserService
         $listSocialMedia = [];
         $listFeedback = [];
         $i = 0;
-
+        dd($kolProfiles);
+        
         foreach($kolProfiles as $key => $profileList){
             $listProfiles[$i]['profile_id'] = $profileList['id'];
             $listProfiles[$i]['languages'] = $profileList['languages'];
@@ -1659,34 +1669,34 @@ class UserService
             $socialMediaName = $profileList['social_active'];
             switch ($socialMediaName) {
                 case "instagram":
-                    $socialMediaIcon = "fa fa-instagram";
+                    $socialMediaIcon = "fa-brands fa-instagram";
                     break;
-                case "youtube":
-                    $socialMediaIcon = "fa fa-youtube";
-                    break;
-                case "tik-tok":
-                    $socialMediaIcon = "fa-brands fa-tiktok";
-                    break;
-                case "facebook":
-                    $socialMediaIcon = "fa fa-facebook";
-                    break;
-                case "snapchat":
-                    $socialMediaIcon = "fa fa-snapchat-ghost";
-                    break;
-                default:
-                    $socialMediaIcon = "";
-                }
-            $listProfiles[$i]['social_active_icon'] = $socialMediaIcon;
-            $listProfiles[$i]['video_links'] = $profileList['video_links'];
-            $listProfiles[$i]['tags'] = $profileList['tags'];
-            $listProfiles[$i]['user_id'] = $profileList['getUser']['id'];
-            $listProfiles[$i]['username'] = $profileList['getUser']['name'];
-            $listProfiles[$i]['email'] = $profileList['getUser']['email'];
-            $listProfiles[$i]['role_id'] = $profileList['getUser']['role_id'];
-            $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
-            $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
-            $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
-
+                    case "youtube":
+                        $socialMediaIcon = "fa-brands fa-youtube";
+                        break;
+                        case "tik-tok":
+                            $socialMediaIcon = "fa-brands fa-tiktok";
+                            break;
+                            case "facebook":
+                                $socialMediaIcon = "fa-brands fa-facebook";
+                                break;
+                                case "snapchat":
+                                    $socialMediaIcon = "fa-brands fa-snapchat-ghost";
+                                    break;
+                                    default:
+                                    $socialMediaIcon = "";
+                                }
+                                $listProfiles[$i]['social_active_icon'] = $socialMediaIcon;
+                                $listProfiles[$i]['video_links'] = $profileList['video_links'];
+                                $listProfiles[$i]['tags'] = $profileList['tags'];
+                                $listProfiles[$i]['user_id'] = $profileList['getUser']['id'];
+                                $listProfiles[$i]['username'] = $profileList['getUser']['name'];
+                                $listProfiles[$i]['email'] = $profileList['getUser']['email'];
+                                $listProfiles[$i]['role_id'] = $profileList['getUser']['role_id'];
+                                $listProfiles[$i]['profile_image'] = $profileList['getUser']['avatar'];
+                                $listProfiles[$i]['gender'] = $profileList['getUser']['gender'];
+                                $listProfiles[$i]['phone'] = $profileList['getUser']['phone'];
+                                
             if($profileList['getAddress']){
                 $listProfiles[$i]['Address']['address'] = $profileList['getAddress']['address'];
                 $listProfiles[$i]['Address']['landmark'] = $profileList['getAddress']['landmark'];
@@ -1699,6 +1709,7 @@ class UserService
             $listProfiles[$i]['bookmark'] = ($profileList['getBookmark']==null)? false : true;
 
             if($profileList['getSocialMedia']){
+
             $j = 0;
             foreach($profileList['getSocialMedia'] as $socialAccounts){
                 $listSocialMedia[$j]['social_media_id'] = $socialAccounts['id'];
@@ -1723,7 +1734,6 @@ class UserService
                     $k++;
                 }
             }
-         
             $listProfiles[$i]['SocialMedia'] = $listSocialMedia;
             $listProfiles[$i]['Feedbacks'] = $listFeedback;
 
