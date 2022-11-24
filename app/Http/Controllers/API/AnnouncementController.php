@@ -64,7 +64,7 @@ class AnnouncementController extends Controller
                         return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg]);     
                     }
                 } else{
-                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>"Please add profile details first."]);
+                    return response()->json(["status"=>false,'statusCode'=>500,"message"=>"Please add profile details first."]);
                 }
                 
 
